@@ -53,6 +53,20 @@ const resolveUrl = (src: string, pagePath: string) => {
   if (src.startsWith('/')) return `${ORIGIN}${src}`;
   return `${ORIGIN}${pagePath.replace(/\/[^/]*$/, '/')}${src}`;
 };
+const canonicalImageUrl = (url: string) => {
+  try {
+    const u = new URL(url);
+    if (u.hostname !== 'ai-2027.com' && u.hostname !== 'www.ai-2027.com') return url;
+    if (u.pathname !== '/_next/image') return url;
+    const inner = u.searchParams.get('url');
+    if (!inner) return url;
+    const path = decodeURIComponent(inner);
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
+  } catch {
+    return url;
+  }
+};
 const looksNumeric = (s: string) => {
   if (s.length < 6 || s.length > 400) return false;
   return /[$€£]|\d\s*%|[\d,]+\s*%\s|(?:\d|\))\s*x\s|FLOP|flops|\btrillion\b|\bbillion\b|\bmillion\b|10\s*\^|×\s*10|\d\s*GW\b|\d\s*TW\b|\$\s*\d|over\s+\d|under\s+\d|~\d|\b\d{1,3}(?:,\d{3})+\b|\d+,\d{3}|\b\d{2,4}x\b/i.test(s);
@@ -110,19 +124,19 @@ export async function buildCatalog(): Promise<Catalog> {
     $('link[rel="preload"][as="image"]').each((_, el) => {
       const href = $(el).attr('href');
       if (!href) return;
-      const url = resolveUrl(href, path);
+      const url = canonicalImageUrl(resolveUrl(href, path));
       if (!imageByUrl.has(url)) imageByUrl.set(url, { url, label: href, sourcePage: path });
     });
     $('meta[property="og:image"]').each((_, el) => {
       const content = $(el).attr('content');
       if (!content) return;
-      const url = resolveUrl(content, path);
+      const url = canonicalImageUrl(resolveUrl(content, path));
       if (!imageByUrl.has(url)) imageByUrl.set(url, { url, label: 'og:image', sourcePage: path });
     });
     $('img').each((_, el) => {
       const src = $(el).attr('src');
       if (!src) return;
-      const url = resolveUrl(src, path);
+      const url = canonicalImageUrl(resolveUrl(src, path));
       const alt = ($(el).attr('alt') || '').trim();
       if (!imageByUrl.has(url)) imageByUrl.set(url, { url, label: alt || src, sourcePage: path });
     });
@@ -132,7 +146,7 @@ export async function buildCatalog(): Promise<Catalog> {
       for (const part of ss.split(',')) {
         const piece = part.trim().split(/\s+/)[0];
         if (!piece) continue;
-        const url = resolveUrl(piece, path);
+        const url = canonicalImageUrl(resolveUrl(piece, path));
         if (!imageByUrl.has(url)) imageByUrl.set(url, { url, label: 'srcset', sourcePage: path });
       }
     });
