@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import HomePage from './HomePage';
+import Handfasting2 from './handfasting-simple/Handfasting2';
+
 const Page = () => {
-  redirect('/handfasting-simple');
+  return <Handfasting2 />;
 };
 export default Page;
-export const dynamic = 'force-dynamic';

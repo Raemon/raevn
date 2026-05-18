@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Diet {
+  omnivore
+  vegetarian
+  vegan
+}
+
+model Guest {
+  id        String   @id @default(cuid())
+  name      String
+  diet      Diet
+  meaningful Boolean
+  plusOne   String
+  createdAt DateTime @default(now())
+}
