@@ -15,7 +15,7 @@ const ConstellationNameLabel = ({
   nameFontClassName: string;
 }) => {
   const placement = readConstellationPlacement(guestSkyRow, slotIndex, slotCount);
-  const transformSentence = `translate(-50%, -50%) rotate(${placement.rotationDeg}deg) scale(${placement.scale})`;
+  const transformSentence = `translate(-50%, -50%) scale(${placement.scale})`;
   return (
     <span
       className={`${nameFontClassName} pointer-events-none absolute max-w-[12rem] truncate text-[clamp(0.78rem,2.8vw,0.98rem)] font-normal leading-tight tracking-[0.02em] transition-[opacity,transform] duration-500`}

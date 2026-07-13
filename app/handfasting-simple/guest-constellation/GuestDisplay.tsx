@@ -15,7 +15,7 @@ const GuestDisplay = ({
   }
   return (
     <div
-      className="relative mx-auto mt-6 w-full max-w-[min(100%,28rem)] select-none"
+      className="relative mx-auto mt-6 mb-[500px] w-full max-w-[min(100%,28rem)] select-none"
       aria-label="Guest names"
     >
       <div className="relative aspect-[5/4] w-full">

@@ -5,3 +5,6 @@ out
 *.log
 .env
 .env*.local
+guestlist*.md
+guestlist*.csv
+guestlist*.json

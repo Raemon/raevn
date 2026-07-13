@@ -8,7 +8,14 @@ import CalendarShortcutRibbon from './save-the-date/CalendarShortcutRibbon';
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
 import { cormorant, playfair } from './save-the-date/handfastingInvitationTypography';
 
-const Handfasting2 = () => {
+// Present when the page was reached through a tokenized invite link.
+export type PersonalizedInvitation = {
+  inviteeName: string;
+  inviteToken: string;
+  invitationHtml: string | null;
+};
+
+const Handfasting2 = ({ personalization }: { personalization?: PersonalizedInvitation }) => {
   const { guests, persistGuestThroughConstellationCatalog } = useGuestConstellation();
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);
   useEffect(() => {
@@ -46,10 +53,26 @@ const Handfasting2 = () => {
             Round 2 of an iterated exponential kickstarter of love.
           </h3>
         </div>
+        {personalization && (
+          <div className="flex w-full max-w-xl flex-col items-center gap-4 px-4">
+            <p className={`${cormorant.className} m-0 text-[clamp(1.2rem,2vw,1.6rem)] font-light italic tracking-[0.04em] text-[#e9e3d4]`}>
+              Dear {personalization.inviteeName},
+            </p>
+            {personalization.invitationHtml && (
+              <div
+                className={`${cormorant.className} w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-3 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic`}
+                // Host-authored content from the /admin TipTap editor.
+                dangerouslySetInnerHTML={{ __html: personalization.invitationHtml }}
+              />
+            )}
+          </div>
+        )}
         <div className="flex flex-col items-center">
           <GuestNameEntry
             persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
             className={`${cormorant.className}`}
+            prefilledGuestName={personalization?.inviteeName}
+            inviteToken={personalization?.inviteToken}
           />
         </div>
         <SaveTheDateHeroAnnouncement />

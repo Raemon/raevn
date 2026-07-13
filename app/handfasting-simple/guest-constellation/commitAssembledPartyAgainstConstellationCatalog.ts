@@ -1,0 +1,65 @@
+import type { Dispatch, SetStateAction } from 'react';
+import type { GuestWithOptimistic } from './guestTypes';
+import type { PartyRegistrationPayload } from './partyRegistrationTypes';
+import { buildOptimisticPartyPlaceholders } from './buildOptimisticGuestPlaceholder';
+import { dropGuestRowsByIdentifiers, stitchAuthoritativePartyOverPlaceholders } from './guestRowTransforms';
+import { replyWithPersistedPartyRows } from './replyWithPersistedPartyRows';
+
+function appendTransientPartyGlow(
+  receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
+  placeholderRows: GuestWithOptimistic[],
+): void {
+  receiveGuestRows((beforeRows) => [...beforeRows, ...placeholderRows]);
+}
+
+// Swaps placeholders for Neon truth exactly where each attendee stood in line.
+
+function confirmPartyPlaceholdersWithServerTruth(
+  receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
+  temporaryIdentifiers: string[],
+  authoritativeRows: GuestWithOptimistic[],
+): void {
+  receiveGuestRows((beforeRows) =>
+    stitchAuthoritativePartyOverPlaceholders(beforeRows, temporaryIdentifiers, authoritativeRows),
+  );
+}
+
+// Drops optimistic dust if Postgres declined the inscription without drama;
+// the server transaction is all-or-nothing, so the rewind is too.
+
+function scrubFailedPartyPlaceholders(
+  receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
+  temporaryIdentifiers: string[],
+): void {
+  receiveGuestRows((beforeRows) => dropGuestRowsByIdentifiers(beforeRows, temporaryIdentifiers));
+}
+
+async function reconcileOrRewindTransientPartyGlow(
+  receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
+  temporaryIdentifiers: string[],
+  party: PartyRegistrationPayload,
+): Promise<void> {
+  try {
+    const authoritativeRows = await replyWithPersistedPartyRows(party);
+    confirmPartyPlaceholdersWithServerTruth(receiveGuestRows, temporaryIdentifiers, authoritativeRows);
+  } catch {
+    scrubFailedPartyPlaceholders(receiveGuestRows, temporaryIdentifiers);
+    throw new Error('Registration did not reach the catalog');
+  }
+}
+
+// Binds submission + optimistic paint + persistence so tinkers tweak one cohesive story thread.
+
+export const commitAssembledPartyAgainstConstellationCatalog = async (
+  receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
+  party: PartyRegistrationPayload,
+): Promise<void> => {
+  if (party.rsvp !== true) {
+    // Declining and undecided parties are recorded but never painted in the sky.
+    await replyWithPersistedPartyRows(party);
+    return;
+  }
+  const { placeholderRows, temporaryIdentifiers } = buildOptimisticPartyPlaceholders(party);
+  appendTransientPartyGlow(receiveGuestRows, placeholderRows);
+  await reconcileOrRewindTransientPartyGlow(receiveGuestRows, temporaryIdentifiers, party);
+};

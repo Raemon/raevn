@@ -14,10 +14,35 @@ enum Diet {
 }
 
 model Guest {
-  id        String   @id @default(cuid())
-  name      String
-  diet      Diet
-  meaningful Boolean
-  plusOne   String
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String
+  diet           Diet
+  meaningful     Boolean
+  plusOne        String
+  rsvp           Boolean? // null = undecided; only rsvp=true guests appear in the constellation
+  isChildUnder2  Boolean  @default(false)
+  needsHighChair Boolean  @default(false)
+  registeredById String? // set on family rows: the primary registrant who added them
+  registeredBy   Guest?   @relation("GuestFamilyParty", fields: [registeredById], references: [id], onDelete: SetNull)
+  familyMembers  Guest[]  @relation("GuestFamilyParty")
+  inviteeId      String? // set when the RSVP arrived through a tokenized invite link
+  invitee        Invitee? @relation(fields: [inviteeId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+}
+
+// Invite-list entries, seeded from the gitignored guestlist.json via
+// scripts/seed-invitees.mjs (emails must never live in the public repo).
+model Invitee {
+  id               String    @id @default(cuid())
+  side             String // 'both' | 'elizabeth' | 'ray'
+  name             String
+  email            String?
+  note             String?
+  sortOrder        Int
+  inviteToken      String?   @unique // non-guessable token for /invite/[token]
+  invitationHtml   String? // host-authored invitation letter (TipTap HTML)
+  invitationSentAt DateTime? // set only when a host explicitly sends the invite email
+  guests           Guest[]
+
+  @@unique([side, name])
 }

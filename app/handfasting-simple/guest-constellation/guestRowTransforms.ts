@@ -2,19 +2,28 @@ import type { GuestWithOptimistic } from './guestTypes';
 
 // Removes failed attempts so the sky does not keep ghost names.
 
-export const dropGuestRowByIdentifier = (
+export const dropGuestRowsByIdentifiers = (
   rows: GuestWithOptimistic[],
-  doomedIdentifier: string,
-): GuestWithOptimistic[] =>
-  rows.filter((row) => row.id !== doomedIdentifier);
+  doomedIdentifiers: string[],
+): GuestWithOptimistic[] => {
+  const doomed = new Set(doomedIdentifiers);
+  return rows.filter((row) => !doomed.has(row.id));
+};
 
-// Pins the Neon truth onto the tentative slot without reordering siblings.
+// Pins the Neon truth onto each tentative slot without reordering siblings;
+// placeholders the server somehow didn't echo back simply dissolve.
 
-export const stitchAuthoritativeGuestOverPlaceholder = (
+export const stitchAuthoritativePartyOverPlaceholders = (
   rowsBeforeSwap: GuestWithOptimistic[],
-  temporaryIdentifier: string,
-  authoritativeRow: GuestWithOptimistic,
-): GuestWithOptimistic[] =>
-  rowsBeforeSwap.map((row) =>
-    row.id === temporaryIdentifier ? { ...authoritativeRow, optimistic: false } : row,
+  temporaryIdentifiers: string[],
+  authoritativeRows: GuestWithOptimistic[],
+): GuestWithOptimistic[] => {
+  const swapByTemporaryId = new Map(
+    temporaryIdentifiers.map((temporaryId, memberIndex) => [temporaryId, authoritativeRows[memberIndex]]),
   );
+  return rowsBeforeSwap.flatMap((row) => {
+    if (!swapByTemporaryId.has(row.id)) return [row];
+    const authoritativeRow = swapByTemporaryId.get(row.id);
+    return authoritativeRow ? [{ ...authoritativeRow, optimistic: false }] : [];
+  });
+};
