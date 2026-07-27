@@ -16,14 +16,6 @@ export type TapestryPerson = {
   hovertext?: string | null;
 };
 
-// 'tree2' is a second pass at the tree — horizontal names on a knot-style
-// braided trunk. 'tree3' is the original tree with nothing changed but its
-// labels, which lie flat instead of radiating. 'tree4' rebuilds the geometry
-// from the strand model: one woven thread per guest, and a crown that grows
-// from a sapling as replies arrive. All are kept alongside the original so they
-// can be compared at /preview.
-export type TapestryVariant = 'tree' | 'tree2' | 'tree3' | 'tree4' | 'knot' | 'wreath';
-
 // 'staggered' cascades every strand on mount (a full page load); 'single'
 // gives each strand the same short delay, so an arrival added to an
 // already-drawn tapestry animates in alone.

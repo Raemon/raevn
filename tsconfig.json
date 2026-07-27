@@ -33,9 +33,10 @@
     "**/*.tsx",
     ".next-buildcheck/types/**/*.ts",
     ".next-preview/types/**/*.ts",
+    ".next-tree4/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-tree4/types/**/*.ts"
+    ".next-tree4b/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

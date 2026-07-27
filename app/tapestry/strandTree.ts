@@ -189,11 +189,17 @@ const sampleBundleSpline = (controls: Vec[], beta: number, samples: number): Vec
 // canopy. So the couple's two cords are drawn as filled ribbons instead: walk
 // the centreline offsetting by the half-width on one side, come back along the
 // other, and close. `outline` turns the two sides into a single closed path.
+//
+// The fill and its dark casing are returned as separate paths because the
+// casing must not close: stroking the closed ribbon draws a bar straight across
+// the cord at both cut ends, and a cord assembled from weave runs is cut at
+// every crossing — each bar reads as a pipe joint. `edges` carries only the two
+// long sides, as two open subpaths.
 export const buildRibbon = (
   centreline: Vec[],
   halfWidthAt: (progress: number) => number,
   outline: (points: Vec[]) => string | null,
-): string => {
+): { fill: string; edges: string } => {
   const nearSide: Vec[] = [];
   const farSide: Vec[] = [];
   centreline.forEach((point, index) => {
@@ -210,8 +216,8 @@ export const buildRibbon = (
   });
   const out = outline(nearSide);
   const back = outline([...farSide].reverse());
-  if (!out || !back) return '';
-  return `${out} L${back.slice(1)} Z`;
+  if (!out || !back) return { fill: '', edges: '' };
+  return { fill: `${out} L${back.slice(1)} Z`, edges: `${out} ${back}` };
 };
 
 export type StrandWeaveOptions = {
@@ -233,8 +239,12 @@ export type StrandWeaveOptions = {
 // Threads gather to a point at the very tip of their root, then fan apart as
 // they rise: without this every thread in a cluster would arrive underground
 // still spread across the full width of the bundle, and the root would read as a
-// frayed broom rather than one tapering spike.
-const ROOT_CONVERGE = 0.14;
+// frayed broom rather than one tapering spike. The taper runs well past the
+// soil line and is concave (squared), so everything underground stays a thin
+// rootlet and the bundle only takes on its full girth up in the trunk — a
+// linear ramp ending underground made the roots as fat as the trunk itself.
+const ROOT_CONVERGE = 0.26;
+const ROOT_PINCH = 2.1;
 
 // A woven strand knows not only where it runs but where it is in its own
 // rotation at every step. `swing` is that rotation as a signed value: positive
@@ -295,7 +305,7 @@ export const buildWovenStrand = (
         Math.sqrt(loadAt(progress)) *
         0.5 *
         (1 - Math.pow(progress, 2.6)) *
-        Math.min(1, progress / ROOT_CONVERGE);
+        Math.min(1, Math.pow(progress / ROOT_CONVERGE, ROOT_PINCH));
     const turn = Math.sin(
       2 * Math.PI * twistTurns * (cumulative[index] / totalLength) + phase,
     );

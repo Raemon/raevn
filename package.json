@@ -9,7 +9,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "dev:preview": "NEXT_DIST_DIR=.next-preview next dev"
+    "dev:preview": "NEXT_DIST_DIR=.next-preview next dev",
+    "dev:tree4": "NEXT_DIST_DIR=.next-tree4 next dev"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",

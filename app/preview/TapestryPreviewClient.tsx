@@ -2,21 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Handfasting2 from '../handfasting-simple/Handfasting2';
-import GuestTapestry from '../tapestry/GuestTapestry';
-import { isTapestryVariant } from '../tapestry/tapestryConfig';
+import TreeV4Tapestry from '../tapestry/TreeV4Tapestry';
 import { groupIntoFamilies } from '../tapestry/tapestryOrdering';
 import { createSeededRandom } from '../tapestry/tapestrySeededRandom';
-import type { TapestryPerson, TapestryVariant } from '../tapestry/tapestryTypes';
+import type { TapestryPerson } from '../tapestry/tapestryTypes';
 import { cormorant } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
-
-const VARIANTS: Array<{ key: TapestryVariant; label: string }> = [
-  { key: 'knot', label: 'The Handfasting Knot' },
-  { key: 'tree', label: 'The Living Tree' },
-  { key: 'tree2', label: 'Tree v2' },
-  { key: 'tree3', label: 'Tree v3' },
-  { key: 'tree4', label: 'Tree v4 — woven' },
-  { key: 'wreath', label: 'The Woven Wreath' },
-];
 
 const ARRIVAL_INTERVAL_MS = 2400;
 
@@ -44,23 +34,9 @@ const TapestryPreviewClient = ({
   persons: TapestryPerson[];
   usingSampleData: boolean;
 }) => {
-  const [variant, setVariant] = useState<TapestryVariant>('knot');
   const parties = useMemo(() => buildArrivalSequence(persons), [persons]);
   const [arrivedParties, setArrivedParties] = useState(0);
   const [playing, setPlaying] = useState(true);
-
-  // Deep-linkable tabs: /preview?tapestry=tree opens on the tree, and
-  // switching updates the URL so a look can be shared as a link.
-  useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('tapestry');
-    if (isTapestryVariant(requested)) setVariant(requested);
-  }, []);
-  const chooseVariant = (next: TapestryVariant) => {
-    setVariant(next);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tapestry', next);
-    window.history.replaceState(null, '', url);
-  };
 
   useEffect(() => {
     if (!playing || arrivedParties >= parties.length) return;
@@ -85,32 +61,12 @@ const TapestryPreviewClient = ({
         tapestrySection={
           /* entrance="single": only the newly arrived strands animate in;
              everyone already woven just gently shifts to make room. */
-          <GuestTapestry
-            key={variant}
-            persons={visiblePersons}
-            variant={variant}
-            entrance="single"
-          />
+          <TreeV4Tapestry persons={visiblePersons} entrance="single" />
         }
       />
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-2">
         <div className="pointer-events-auto flex w-full max-w-3xl flex-col items-center gap-1.5 rounded-2xl border border-white/15 bg-black/70 px-4 py-2 text-center shadow-[0_8px_30px_rgba(0,0,0,0.6)] backdrop-blur-md">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5">
-            {VARIANTS.map((entry) => (
-              <button
-                key={entry.key}
-                type="button"
-                onClick={() => chooseVariant(entry.key)}
-                className={`${cormorant.className} rounded-full border px-3 py-0.5 text-base tracking-wide transition-colors ${
-                  entry.key === variant
-                    ? 'border-[#d9b26a] bg-[#d9b26a]/15 text-[#f1ece0]'
-                    : 'border-white/20 text-[#cbc4b3] hover:border-white/45'
-                }`}
-              >
-                {entry.label}
-              </button>
-            ))}
-            <span aria-hidden className="mx-1 h-4 w-px bg-white/20" />
             <button
               type="button"
               onClick={() => {

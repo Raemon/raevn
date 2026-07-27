@@ -16,6 +16,13 @@
       "autoPort": true
     },
     {
+      "name": "raevn-tree4",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:tree4"],
+      "port": 3175,
+      "autoPort": true
+    },
+    {
       "name": "raevn-main-worktree",
       "runtimeExecutable": "yarn",
       "runtimeArgs": [

@@ -77,8 +77,8 @@ const THREAD_DRAW_SECONDS = 2.4;
 // stretch has any amplitude, so most of these turns land there — which is where
 // the braid needs its crossings. It scales with the tree: a fixed count packed
 // into a seedling's short stem reads as a jagged zigzag rather than a braid.
-const CORD_TWIST_TURNS_SEEDLING = 2.6;
-const CORD_TWIST_TURNS_MATURE = 5.2;
+const CORD_TWIST_TURNS_SEEDLING = 3.0;
+const CORD_TWIST_TURNS_MATURE = 6.2;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -277,13 +277,16 @@ const TreeV4Tapestry = ({
   // The braid only happens in the trunk. Underground the cords run straight out
   // to their own root tips — a cord that started swinging before it left the
   // soil threw the whole root system into a splay.
-  // Swing wide enough that the two cords clearly pass one another, tight enough
-  // that they stay wrapped around the bundle instead of flailing outside it: a
-  // little under the bundle's own radius, and never less than the cord is thick.
+  // Swing wider than the bundle's own radius, so each pass carries the cord
+  // clear across the trunk and out the other side — a swing narrower than the
+  // cord is wide never separates the two cords on screen, and they read as a
+  // pair of wavy pipes instead of a spiral. The ramp starts right at the soil
+  // line and holds through the whole trunk (the old window only reached full
+  // swing above the trunk top, which is exactly where the wrap needs to be).
   const cordAmplitudeAt = (progress: number) =>
-    Math.max(trunkBundleRadius * 0.75, cordPeakHalfWidth * 1.15) *
-    Math.max(0, Math.min(1, (progress - 0.16) / 0.22)) *
-    Math.max(0, 1 - Math.pow(Math.max(0, progress - 0.42) / 0.34, 1.4));
+    Math.max(trunkBundleRadius * 1.2, cordPeakHalfWidth * 2.2) *
+    Math.max(0, Math.min(1, (progress - 0.1) / 0.12)) *
+    Math.max(0, 1 - Math.pow(Math.max(0, progress - 0.5) / 0.32, 1.4));
 
   const coupleCords = (
     [
@@ -323,7 +326,7 @@ const TreeV4Tapestry = ({
     const runs = splitIntoWeaveRuns(woven.swing).map((run, runIndex) => ({
       key: `${cord.key}-${runIndex}`,
       front: run.front,
-      d: buildRibbon(
+      ...buildRibbon(
         centreline.slice(run.start, run.end + 1),
         (local) => cordHalfWidthAt(lerp(run.start, run.end, local) / lastIndex),
         (points) => smoothPath(points),
@@ -336,6 +339,38 @@ const TreeV4Tapestry = ({
       tipAngle: (Math.atan2(tip.y - approach.y, tip.x - approach.x) * 180) / Math.PI,
     };
   });
+
+  // One layer of cord passes, either the ones that duck behind the trunk or
+  // the ones that swing across the front of it. The fill and its dark casing
+  // are separate paths: the casing strokes only the ribbon's two long edges,
+  // because stroking the closed ribbon drew a bar across the cord at every
+  // weave cut and the cords read as jointed metal pipe instead of thread.
+  const cordRunLayer = (front: boolean) =>
+    coupleCords.flatMap((cord) =>
+      cord.runs
+        .filter((run) => run.front === front)
+        .map((run) => (
+          <g key={run.key} className="rvtree4-cord">
+            <path
+              d={run.fill}
+              style={{ transition: REWEAVE_TRANSITION }}
+              fill={`url(#rvtree4-cord-${cord.key})`}
+            />
+            {/* Raymond's gold sits close to the bark it runs through, so the
+                cords are cased in black: it is the outline, not the hue, that
+                keeps them legible against the bundle they wrap — and it is
+                what makes an over-pass read as an over-pass. */}
+            <path
+              d={run.edges}
+              style={{ transition: REWEAVE_TRANSITION }}
+              fill="none"
+              stroke="#000000"
+              strokeWidth={1.6}
+              strokeOpacity={0.8}
+            />
+          </g>
+        )),
+    );
 
   return (
     <div className="relative mx-auto w-full max-w-none select-none" aria-label="Tree of confirmed guests">
@@ -434,6 +469,17 @@ const TreeV4Tapestry = ({
           style={{ transition: 'rx 1100ms ease, ry 1100ms ease' }}
         />
         <g className="rvtree4-tree">
+          {/* The two of us: one cord each, rising from its own root, braiding
+              through the trunk and thinning away into its owner's half of the
+              crown. Every run that passes behind goes down first — underneath
+              the guest threads, so the cord visibly disappears behind the
+              trunk itself — then the trunk, then every run that passes in
+              front. Because the two cords are wound in opposite phase they
+              alternate, so each takes its turn over and under and the pair
+              reads as one braided rope wrapped around the tree rather than
+              two curves that happen to cross. */}
+          {cordRunLayer(false)}
+
           {/* Every guest, one thread each, ground to name */}
           {strands.map(({ slot, points }) =>
             points.length === 0 ? null : (
@@ -455,36 +501,7 @@ const TreeV4Tapestry = ({
             ),
           )}
 
-          {/* The two of us: one cord each, rising from its own root, braiding
-              through the trunk and thinning away into its owner's half of the
-              crown. Drawn over the guest threads so the weave always has a
-              centre you can find. */}
-          {/* Every run that passes behind, then every run that passes in front.
-              Because the two cords are wound in opposite phase they alternate,
-              so each takes its turn over and under and the pair reads as one
-              braided rope rather than two curves that happen to cross. */}
-          {[false, true].map((front) =>
-            coupleCords.flatMap((cord) =>
-              cord.runs
-                .filter((run) => run.front === front)
-                .map((run) => (
-                  <path
-                    key={run.key}
-                    d={run.d}
-                    className="rvtree4-cord"
-                    style={{ animationDelay: '0s', transition: REWEAVE_TRANSITION }}
-                    fill={`url(#rvtree4-cord-${cord.key})`}
-                    // Raymond's gold sits close to the bark it runs through, so
-                    // the cords are cased in black: it is the outline, not the
-                    // hue, that keeps them legible against the bundle they wrap
-                    // — and it is what makes an over-pass read as an over-pass.
-                    stroke="#000000"
-                    strokeWidth={1.6}
-                    strokeOpacity={0.8}
-                  />
-                )),
-            ),
-          )}
+          {cordRunLayer(true)}
 
           {/* Their own two leaves, on the ends of their own cords — the first
               leaves the seedling ever had, still there under the finished

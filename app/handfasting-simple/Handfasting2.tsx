@@ -2,10 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import GuestNameEntry from './guest-constellation/GuestNameEntry';
-import GuestTapestry from '../tapestry/GuestTapestry';
+import TreeV4Tapestry from '../tapestry/TreeV4Tapestry';
 import { guestsToTapestryPersons } from '../tapestry/personAdapters';
-import { LIVE_TAPESTRY_VARIANT, isTapestryVariant } from '../tapestry/tapestryConfig';
-import type { TapestryVariant } from '../tapestry/tapestryTypes';
 import { useGuestConstellation } from './guest-constellation/useGuestConstellation';
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
 import { cormorant, playfair } from './save-the-date/handfastingInvitationTypography';
@@ -34,13 +32,6 @@ const Handfasting2 = ({
   const [signatureNames, setSignatureNames] = useState('Raymond and Elizabeth');
   useEffect(() => {
     if (Math.random() < 0.5) setSignatureNames('Elizabeth and Raymond');
-  }, []);
-  // ?tapestry=tree|knot|wreath previews an alternate arrangement in place;
-  // read post-mount so the server render stays static.
-  const [tapestryVariant, setTapestryVariant] = useState<TapestryVariant>(LIVE_TAPESTRY_VARIANT);
-  useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('tapestry');
-    if (isTapestryVariant(requested)) setTapestryVariant(requested);
   }, []);
   useEffect(() => {
     const updateOpeningPictureOpacity = () => {
@@ -113,11 +104,7 @@ const Handfasting2 = ({
         <SaveTheDateHeroAnnouncement />
           <div className="mt-[2.75rem] mb-40 flex w-full flex-col items-center px-2">
             {tapestrySection ?? (
-              <GuestTapestry
-                key={tapestryVariant}
-                persons={guestsToTapestryPersons(guests)}
-                variant={tapestryVariant}
-              />
+              <TreeV4Tapestry persons={guestsToTapestryPersons(guests)} />
             )}
           </div>
       </div>
