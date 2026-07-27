@@ -1,11 +1,14 @@
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Inter } from 'next/font/google';
-import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { isAdmin } from '@/lib/auth';
 import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
+import { getInvitationEmail } from '@/lib/invitationEmail';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
 import { loadAdminRows } from './loadAdminRows';
 import DefaultInvitationEditor from './DefaultInvitationEditor';
+import InvitationEmailEditor from './InvitationEmailEditor';
 import GuestsTable from './GuestsTable';
 import InviteesTable from './InviteesTable';
 import MenuOptionsTable from './MenuOptionsTable';
@@ -22,23 +25,13 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ key?: string }>;
-}) {
-  const { key } = await searchParams;
-  if (!isAdminAuthorized(key)) {
-    return (
-      <main className={`${adminFont.className} flex min-h-svh items-center justify-center bg-[#faf8f4] text-[#5f5a51]`}>
-        <p className="text-2xl tracking-wide">This page is for the two of us.</p>
-      </main>
-    );
-  }
+export default async function AdminPage() {
+  if (!(await isAdmin())) redirect('/admin/login');
 
-  const [rows, defaultInvitationHtml, inviteeColumnOrder] = await Promise.all([
+  const [rows, defaultInvitationHtml, invitationEmail, inviteeColumnOrder] = await Promise.all([
     loadAdminRows(),
     getDefaultInvitationHtml(),
+    getInvitationEmail(),
     readInviteeColumnOrder(),
   ]);
 
@@ -62,14 +55,21 @@ export default async function AdminPage({
           <p className="mb-4 text-base text-[#6f6a61]">
             Shown exactly as every invite page renders it, unless you write someone a personal letter.
           </p>
-          <DefaultInvitationEditor initialHtml={defaultInvitationHtml} adminKey={key ?? null} />
+          <DefaultInvitationEditor initialHtml={defaultInvitationHtml} />
+        </section>
+
+        <section className="mx-auto mb-14 max-w-6xl">
+          <h2 className="mb-1 text-3xl font-semibold">Invitation email</h2>
+          <p className="mb-4 text-base text-[#6f6a61]">
+            What the Send buttons below actually mail out — its own text, not the letter above.
+          </p>
+          <InvitationEmailEditor initialEmail={invitationEmail} />
         </section>
 
         <AdminRowsProvider
           initialInvitees={rows.invitees}
           initialGuests={rows.guests}
           initialMenuOptions={rows.menuOptions}
-          adminKey={key ?? null}
         >
           <section className="mb-14">
             <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
@@ -80,8 +80,8 @@ export default async function AdminPage({
             </h2>
             <InviteesTable
               baseUrl={baseUrl}
-              adminKey={key ?? null}
               hasDefaultInvitation={!!defaultInvitationHtml}
+              hasInvitationEmail={!!invitationEmail.bodyHtml}
               columnOrder={inviteeColumnOrder}
             />
           </section>
@@ -93,7 +93,7 @@ export default async function AdminPage({
                 <AdminRowCount of="guests" />
               </span>
             </h2>
-            <GuestsTable adminKey={key ?? null} />
+            <GuestsTable />
           </section>
 
           <section className="mb-14">
@@ -103,7 +103,7 @@ export default async function AdminPage({
                 <AdminRowCount of="menuOptions" />
               </span>
             </h2>
-            <MenuOptionsTable adminKey={key ?? null} />
+            <MenuOptionsTable />
           </section>
         </AdminRowsProvider>
 

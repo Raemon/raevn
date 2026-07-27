@@ -24,14 +24,12 @@ const LetterCard = ({
   note,
   invitationSentAt,
   initialHtml,
-  adminKey,
 }: {
   inviteeId: string;
   name: string;
   note: string | null;
   invitationSentAt: string | null;
   initialHtml: string | null;
-  adminKey: string | null;
 }) => {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,7 +40,7 @@ const LetterCard = ({
     const response = await fetch(`/api/admin/invitees/${inviteeId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ invitationHtml, key: adminKey ?? '' }),
+      body: JSON.stringify({ invitationHtml }),
     }).catch(() => null);
     setSaveState(response?.ok ? 'saved' : 'error');
   };

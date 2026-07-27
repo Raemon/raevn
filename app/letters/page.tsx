@@ -1,6 +1,7 @@
 import { Cormorant_Garamond } from 'next/font/google';
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { isAdmin } from '@/lib/auth';
 import LetterCard from './LetterCard';
 
 const cormorant = Cormorant_Garamond({
@@ -16,19 +17,8 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function LettersPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ key?: string }>;
-}) {
-  const { key } = await searchParams;
-  if (!isAdminAuthorized(key)) {
-    return (
-      <main className={`${cormorant.className} flex min-h-svh items-center justify-center bg-[#0b0a09] text-[#8a8478]`}>
-        <p className="text-2xl italic tracking-wide">This page is for the two of us.</p>
-      </main>
-    );
-  }
+export default async function LettersPage() {
+  if (!(await isAdmin())) redirect('/admin/login');
 
   const invitees = await prisma.invitee.findMany({ orderBy: { sortOrder: 'asc' } });
 
@@ -49,7 +39,6 @@ export default async function LettersPage({
               note={invitee.note}
               invitationSentAt={invitee.invitationSentAt?.toISOString() ?? null}
               initialHtml={invitee.invitationHtml}
-              adminKey={key ?? null}
             />
           ))}
         </div>

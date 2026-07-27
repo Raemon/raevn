@@ -43,17 +43,19 @@ const LinkIcon = () => (
 
 const InviteesTable = ({
   baseUrl,
-  adminKey,
   hasDefaultInvitation,
+  hasInvitationEmail,
   columnOrder,
 }: {
   baseUrl: string;
-  adminKey: string | null;
   hasDefaultInvitation: boolean;
+  hasInvitationEmail: boolean;
   columnOrder: string[] | null;
 }) => {
+  // Sending needs the invitation email written; the letter above only decides
+  // what /invite/[token] renders once they follow the link.
   const readyToSend = (row: InviteeAdminRow): boolean =>
-    !!row.email && !!row.inviteToken && (!!row.invitationHtml || hasDefaultInvitation);
+    !!row.email && !!row.inviteToken && hasInvitationEmail;
   // Rows live in AdminRowsProvider, which re-reads the database every few
   // seconds; setRows still applies our own edits the instant they save.
   const { invitees: rows, updateInvitees: setRows } = useAdminRows();
@@ -71,7 +73,7 @@ const InviteesTable = ({
     const response = await fetch(`/api/admin/invitees/${inviteeId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...patch, key: adminKey ?? '' }),
+      body: JSON.stringify(patch),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) =>
@@ -86,7 +88,7 @@ const InviteesTable = ({
     const response = await fetch('/api/admin/invitees', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) {
       setSendReport('Could not add an invitee.');
@@ -101,7 +103,7 @@ const InviteesTable = ({
     const response = await fetch(`/api/admin/invitees/${inviteeId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) => beforeRows.filter((row) => row.id !== inviteeId));
@@ -124,7 +126,7 @@ const InviteesTable = ({
     const response = await fetch('/api/admin/invitee-columns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ columns: nextColumns, key: adminKey ?? '' }),
+      body: JSON.stringify({ columns: nextColumns }),
     }).catch(() => null);
     setSendReport(
       response?.ok
@@ -137,7 +139,7 @@ const InviteesTable = ({
     const response = await fetch('/api/admin/send-invitations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inviteeIds, key: adminKey ?? '' }),
+      body: JSON.stringify({ inviteeIds }),
     }).catch(() => null);
     if (!response?.ok) {
       setSendReport('Send request failed — nothing was recorded as sent.');
@@ -296,7 +298,11 @@ const InviteesTable = ({
               title={
                 readyToSend(row)
                   ? `Email this invitation to ${row.email}`
-                  : 'Needs an email, a token, and a letter (personal or default)'
+                  : !hasInvitationEmail
+                    ? 'Write the invitation email at the top of this page first'
+                    : !row.email
+                      ? 'This invitee has no email address'
+                      : 'This invitee has no invite token — run scripts/seed-invitees.mjs'
               }
               onSend={() => dispatchSend([row.id])}
             />
@@ -396,7 +402,7 @@ const InviteesTable = ({
         <SendInvitationButton
           label={`Send all unsent (${unsentReadyRows.length})`}
           disabled={unsentReadyRows.length === 0}
-          title="Sends to every invitee with an email, a token, a letter (personal or default), and no send timestamp"
+          title="Sends to every invitee with an email, a token, and no send timestamp — once the invitation email is written"
           onSend={() => dispatchSend(unsentReadyRows.map((row) => row.id))}
         />
       </div>

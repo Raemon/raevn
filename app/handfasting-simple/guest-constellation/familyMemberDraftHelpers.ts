@@ -2,6 +2,7 @@ import type { FamilyMemberDraft } from './partyRegistrationTypes';
 
 export const mintEmptyFamilyMemberDraft = (): FamilyMemberDraft => ({
   draftKey: crypto.randomUUID(),
+  persistedId: null,
   name: '',
   diet: 'omnivore',
   isChildUnder2: false,

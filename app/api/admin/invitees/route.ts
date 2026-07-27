@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { withAdmin } from '@/lib/auth';
 
 // Creates a blank invitee for the admin table to edit in place. Tokens are
 // minted here the same way scripts/seed-invitees.mjs mints them, so a
@@ -9,12 +9,8 @@ import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
 
 const PLACEHOLDER_NAME = 'New invitee';
 
-export async function POST(request: Request) {
+export const POST = withAdmin(async (request: Request) => {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!isAdminAuthorized(typeof body.key === 'string' ? body.key : undefined)) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-  }
-
   const side = typeof body.side === 'string' && body.side.trim() !== '' ? body.side.trim() : 'both';
   const requestedName =
     typeof body.name === 'string' && body.name.trim() !== '' ? body.name.trim() : PLACEHOLDER_NAME;
@@ -38,4 +34,4 @@ export async function POST(request: Request) {
     }
   }
   return NextResponse.json({ error: 'Could not create an invitee' }, { status: 409 });
-}
+});

@@ -2,6 +2,7 @@
 
 import type { FamilyMemberDraft, MenuOptionPreview } from './partyRegistrationTypes';
 import CelestialCheckbox from './CelestialCheckbox';
+import { PANEL_CARD_CLASS_NAME } from './panelCard';
 import DietChoiceTrio from './DietChoiceTrio';
 
 const FamilyMemberRow = ({
@@ -15,7 +16,7 @@ const FamilyMemberRow = ({
   onPatch: (patch: Partial<Omit<FamilyMemberDraft, 'draftKey'>>) => void;
   onDiscard: () => void;
 }) => (
-  <div className="flex w-full flex-col items-center gap-2 rounded-md border border-white/20 p-3">
+  <div className={PANEL_CARD_CLASS_NAME}>
     <div className="flex w-full items-center">
       <input
         type="text"

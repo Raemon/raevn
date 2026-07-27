@@ -19,10 +19,8 @@ const toolbarButtonClassName =
 
 const DefaultInvitationEditor = ({
   initialHtml,
-  adminKey,
 }: {
   initialHtml: string | null;
-  adminKey: string | null;
 }) => {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const editor = useEditor({
@@ -38,7 +36,7 @@ const DefaultInvitationEditor = ({
     const response = await fetch('/api/admin/default-invitation', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ invitationHtml, key: adminKey ?? '' }),
+      body: JSON.stringify({ invitationHtml }),
     }).catch(() => null);
     setSaveState(response?.ok ? 'saved' : 'error');
   };

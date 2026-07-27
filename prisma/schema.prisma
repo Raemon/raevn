@@ -43,8 +43,9 @@ model MenuOption {
   createdAt   DateTime @default(now())
 }
 
-// Site-wide key/value settings; currently just defaultInvitationHtml, the
-// invitation letter used for every invitee without a personal one.
+// Site-wide key/value settings: defaultInvitationHtml, the invitation letter
+// used for every invitee without a personal one, plus invitationEmailSubject
+// and invitationEmailBodyHtml, the invitation email's own text.
 model Setting {
   key   String @id
   value String

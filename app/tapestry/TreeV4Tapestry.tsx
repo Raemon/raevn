@@ -21,25 +21,22 @@ import type { TapestryEntrance, TapestryPerson } from './tapestryTypes';
 // frays into single threads at the crown's edge. Nothing here has a "branch
 // width" — a limb is just how many people are travelling together at that point.
 //
-// It is also a clock. With no replies yet it is a small seedling of two threads
-// low in the frame, and every household that answers thickens the weave and
-// widens the crown into the sky above it. The frame itself never moves: the
-// emptiness a seedling leaves is the room it has yet to grow into, and it is
-// what makes the growth read as growth.
+// It is also a clock. With no replies yet it is a small seedling of two threads,
+// and every household that answers thickens the weave and widens the crown. The
+// frame is cut to whatever the tree currently is — a seedling gets a seedling's
+// frame rather than a page of empty sky above it — so it grows by taking up more
+// of the page, not by filling in reserved space.
 
 const CANOPY_X = 700;
 const ROOT_Y = 1015;
-// Wide and shallow, so the whole block clears 90vh on an ordinary screen
-// without the SVG having to be letterboxed — and where it cannot, the 90vh cap
-// on the <svg> scales it down rather than cropping. VIEW_TOP is derived rather
-// than written down, so the inscription below the roots always keeps its room.
+// Wide, and only as deep as the tree standing in it: the top edge is cut from
+// the crown's own extent at render time (see `viewTop` below), and the 90vh cap
+// on the <svg> scales the whole thing down rather than cropping when a mature
+// crown outgrows the viewport.
 const VIEW_W = 1400;
-const VIEW_H = 760;
 // Room below the ground line for the roots to reach into and the couple's names
 // to sit under them without the two tangling.
 const VIEW_BOTTOM = ROOT_Y + 132;
-const VIEW_TOP = VIEW_BOTTOM - VIEW_H;
-const VIEW_BOX = `0 ${VIEW_TOP} ${VIEW_W} ${VIEW_H}`;
 // A dome rather than a full circle: the crown reaches almost to horizontal on
 // each side, so no limb has to travel downwards to be reached.
 const SECTOR_START = (-176 * Math.PI) / 180;
@@ -73,12 +70,28 @@ const GROWTH_SATURATION = 16;
 // the CSS duration and the leaf's delay — keeping them in one constant is what
 // stops a leaf from budding on a branch that is still growing towards it.
 const THREAD_DRAW_SECONDS = 2.4;
-// Full rotations the couple's cords make over their whole run. Only the trunk
-// stretch has any amplitude, so most of these turns land there — which is where
-// the braid needs its crossings. It scales with the tree: a fixed count packed
-// into a seedling's short stem reads as a jagged zigzag rather than a braid.
-const CORD_TWIST_TURNS_SEEDLING = 3.0;
-const CORD_TWIST_TURNS_MATURE = 6.2;
+// The couple's braid, counted in lobes — the open lens shapes between
+// crossings. Four lobes make three crossings, evenly spaced up the trunk.
+// The winding is pinned to the swing window (below) rather than spread over
+// the cord's whole arc length, so every crossing lands where the swing is
+// actually open and each one reads as a clear over-or-under pass.
+const CORD_LOBES = 4;
+// Where the braid lives, as progress along the cord. These are knot
+// positions, not arc lengths: sampling is uniform in spline parameter, so
+// with five anchors the cord sits at the collar at exactly one third of its
+// samples and at the trunk top at one half, whatever the tree's proportions —
+// the window holds for seedling and mature tree alike. It opens at the collar
+// and closes a little above the trunk top, which is as far as the two cords'
+// centrelines still coincide; a crossing scheduled beyond that point never
+// visually intersects, because each cord is by then winding around its own
+// separate path out into the crown.
+const CORD_SWING_START = 0.34;
+const CORD_SWING_END = 0.6;
+const cordWindAt = (progress: number) =>
+  Math.min(1, Math.max(0, (progress - CORD_SWING_START) / (CORD_SWING_END - CORD_SWING_START)));
+// The braid window spans only a quarter of the samples, so the cords are
+// sampled at double density to keep each lobe a round curve.
+const CORD_SAMPLES = 144;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -256,37 +269,39 @@ const TreeV4Tapestry = ({
     }
   });
 
-  // The couple's own two cords. Each runs the same route as everybody else — up
-  // from its own root tip, through the collar, up the trunk — and then, instead
-  // of ending at a name, sweeps out into its owner's half of the crown and
-  // thins away among their people. They braid around one another through the
-  // trunk (opposite phases), and they are the one place girth is a design
-  // decision rather than a headcount, so they take an explicit amplitude and are
-  // drawn as filled ribbons: thin rootlet, thick cord, tapering away.
+  // The couple's own two cords. Each one arcs up out of its owner's root
+  // cluster — the same tip their own people's threads spring from, so the cord
+  // reads as the thick parent root of that fan — meets the other at the
+  // collar, winds around it twice up the trunk, and then parts ways, sweeping
+  // into its owner's half of the crown to thin away among their people.
+  // They are the one place girth is a design decision rather than a headcount,
+  // so they take an explicit amplitude and are drawn as filled ribbons: thin
+  // at the root tip, thick cord, tapering away.
   const trunkBundleRadius = threadSpacing * Math.sqrt(Math.max(slots.length, 1)) * 0.5;
   const cordPeakHalfWidth = lerp(4.2, 7.5, growth);
-  // Girth over the run: a slim rootlet swelling to the full cord by the top of
-  // the trunk, then thinning to nothing out in the branches.
+  // Girth over the run: swelling from the root tip to full cord by the soil
+  // line, holding that full girth for the entire climb up the trunk, then
+  // thinning to nothing out in the branches. The plateau is what keeps the
+  // spiral evenly thick however large the crown grows — pinning the peak to a
+  // fixed fraction of the run meant a big crown pushed it up into the boughs,
+  // and the trunk stretch (a smaller share of a longer run) went slim.
   const cordHalfWidthAt = (progress: number) =>
     cordPeakHalfWidth *
-    (progress < 0.38
-      ? lerp(0.24, 1, progress / 0.38)
-      : Math.pow(Math.max(0, 1 - (progress - 0.38) / 0.62), 1.35));
-  // They wrap the outside of everyone else's bundle through the trunk, and fall
-  // back onto their own centreline once they leave it.
-  // The braid only happens in the trunk. Underground the cords run straight out
-  // to their own root tips — a cord that started swinging before it left the
-  // soil threw the whole root system into a splay.
-  // Swing wider than the bundle's own radius, so each pass carries the cord
-  // clear across the trunk and out the other side — a swing narrower than the
-  // cord is wide never separates the two cords on screen, and they read as a
-  // pair of wavy pipes instead of a spiral. The ramp starts right at the soil
-  // line and holds through the whole trunk (the old window only reached full
-  // swing above the trunk top, which is exactly where the wrap needs to be).
+    (progress < 0.14
+      ? lerp(0.3, 1, progress / 0.14)
+      : progress < 0.52
+        ? 1
+        : Math.pow(Math.max(0, 1 - (progress - 0.52) / 0.48), 1.35));
+  // Swing wide enough to carry each cord across the trunk and out the other
+  // side — narrower never separates the pair on screen. Dead level across the
+  // whole window, so the spiral keeps one even radius the whole climb — the
+  // winding sine is already zero at both window edges, so a flat amplitude
+  // still opens and closes the braid smoothly. The whisper of easing at the
+  // edges only rounds off the sample right at the switch.
   const cordAmplitudeAt = (progress: number) =>
-    Math.max(trunkBundleRadius * 1.2, cordPeakHalfWidth * 2.2) *
-    Math.max(0, Math.min(1, (progress - 0.1) / 0.12)) *
-    Math.max(0, 1 - Math.pow(Math.max(0, progress - 0.5) / 0.32, 1.4));
+    Math.max(trunkBundleRadius * 1.1, cordPeakHalfWidth * 1.9) *
+    Math.min(1, Math.max(0, (progress - CORD_SWING_START) / 0.02)) *
+    Math.min(1, Math.max(0, (CORD_SWING_END - progress) / 0.02));
 
   const coupleCords = (
     [
@@ -308,14 +323,14 @@ const TreeV4Tapestry = ({
       ],
       {
         threadSpacing,
-        // Enough turns that the stretch where the cords actually overlap — the
-        // trunk — contains several crossings. At under two turns for the whole
-        // run they merely passed one another once and read as a cross, not a
-        // rope.
-        twistTurns: lerp(CORD_TWIST_TURNS_SEEDLING, CORD_TWIST_TURNS_MATURE, growth),
+        // Unused for the cords — `turnAt` drives the winding instead.
+        twistTurns: 0,
         phase: cord.phase,
         beta: 0.95,
         amplitudeAt: cordAmplitudeAt,
+        turnAt: (progress: number) =>
+          Math.sin(Math.PI * CORD_LOBES * cordWindAt(progress) + cord.phase),
+        samples: CORD_SAMPLES,
       },
     );
     const centreline = woven.points;
@@ -339,6 +354,20 @@ const TreeV4Tapestry = ({
       tipAngle: (Math.atan2(tip.y - approach.y, tip.x - approach.x) * 180) / Math.PI,
     };
   });
+
+  // Cut the top of the frame to whatever is actually up there: the highest
+  // name, or — before anyone has replied — the tip of the couple's own two
+  // cords. Everything below the ground line is fixed, so only this edge moves,
+  // and as the crown climbs the frame climbs with it.
+  const contentTopY = Math.min(
+    ...coupleCords.map((cord) => cord.tip.y - leafLength),
+    ...slots.map((slot) =>
+      Math.min(labelY.get(slot.person.id) ?? Infinity, polar(slot.theta, slot.radius).y),
+    ),
+  );
+  // A margin of one line, so the topmost name is not written against the edge.
+  const viewTop = contentTopY - nameFontSize * 1.5;
+  const viewBox = `0 ${viewTop} ${VIEW_W} ${VIEW_BOTTOM - viewTop}`;
 
   // One layer of cord passes, either the ones that duck behind the trunk or
   // the ones that swing across the front of it. The fill and its dark casing
@@ -405,12 +434,12 @@ const TreeV4Tapestry = ({
           .rvtree4-tree { animation: none; }
         }
       `}</style>
-      {/* The frame's own proportions keep this under 90vh on an ordinary
-          screen; the cap is the guarantee for very wide ones, where the SVG
-          would otherwise grow taller than the viewport. When it bites, the
-          drawing scales down and centres rather than being cropped. */}
+      {/* The frame is cut to the tree, so a seedling is already short; the cap
+          is the guarantee for very wide screens, where a mature crown would
+          otherwise grow taller than the viewport. When it bites, the drawing
+          scales down and centres rather than being cropped. */}
       <svg
-        viewBox={VIEW_BOX}
+        viewBox={viewBox}
         className="mx-auto block h-auto w-full"
         style={{ maxHeight: '90vh' }}
         role="img"
@@ -585,7 +614,7 @@ const TreeV4Tapestry = ({
         </g>
 
         <text
-          x={CANOPY_X - 96}
+          x={CANOPY_X - 14}
           y={ROOT_Y + 76}
           textAnchor="end"
           className={playfair.className}
@@ -596,7 +625,7 @@ const TreeV4Tapestry = ({
           Elizabeth
         </text>
         <text
-          x={CANOPY_X + 96}
+          x={CANOPY_X + 14}
           y={ROOT_Y + 76}
           textAnchor="start"
           className={playfair.className}

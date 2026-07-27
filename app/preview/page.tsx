@@ -1,4 +1,6 @@
+import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { isAdmin } from '@/lib/auth';
 import { inviteeRowToTapestryPerson } from '../tapestry/personAdapters';
 import type { TapestryPerson } from '../tapestry/tapestryTypes';
 import { buildSampleGuestList } from './sampleGuestList';
@@ -8,11 +10,14 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Tapestry preview — Ray & Elizabeth',
+  robots: { index: false, follow: false },
 };
 
 // What the tapestry will look like on the big day: the entire invite list
-// rendered as though every single invitee has RSVP'd yes.
+// rendered as though every single invitee has RSVP'd yes. Host-only — it
+// shows people who haven't been told they're invited yet.
 export default async function TapestryPreviewPage() {
+  if (!(await isAdmin())) notFound();
   let persons: TapestryPerson[] = [];
   try {
     const invitees = await prisma.invitee.findMany({

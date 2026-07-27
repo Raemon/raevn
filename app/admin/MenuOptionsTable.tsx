@@ -18,7 +18,7 @@ const MENU_COLUMNS = ['dish', 'description', 'diet'] as const;
 
 const DIETS = ['vegan', 'vegetarian', 'omnivore'] as const;
 
-const MenuOptionsTable = ({ adminKey }: { adminKey: string | null }) => {
+const MenuOptionsTable = () => {
   // Rows live in AdminRowsProvider, which re-reads the database every few
   // seconds; setRows still applies our own edits the instant they save.
   const { menuOptions: rows, updateMenuOptions: setRows } = useAdminRows();
@@ -31,7 +31,7 @@ const MenuOptionsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch(`/api/admin/menu-options/${menuOptionId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...patch, key: adminKey ?? '' }),
+      body: JSON.stringify(patch),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) =>
@@ -44,7 +44,7 @@ const MenuOptionsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch('/api/admin/menu-options', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) {
       setNotice('Could not add a dish.');
@@ -59,7 +59,7 @@ const MenuOptionsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch(`/api/admin/menu-options/${menuOptionId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) => beforeRows.filter((row) => row.id !== menuOptionId));

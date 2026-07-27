@@ -21,8 +21,11 @@ export type PartyRegistrationPayload = {
 };
 
 // Client-side editing state for one family row; draftKey is the React key only.
+// persistedId is the catalog row this draft is saving itself onto — null while
+// the guest is still typing a name nobody has been registered under yet.
 export type FamilyMemberDraft = {
   draftKey: string;
+  persistedId: string | null;
   name: string;
   diet: Diet;
   isChildUnder2: boolean;

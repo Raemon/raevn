@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { withAdmin } from '@/lib/auth';
 
 // Partial update of host-editable invitee fields — table cell edits and the
 // TipTap invitation letter. Unknown fields are ignored.
@@ -34,12 +34,9 @@ const buildInviteePatch = (body: Record<string, unknown>): InviteePatch => {
   return patch;
 };
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withAdmin(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const body = (await request.json()) as Record<string, unknown>;
-  if (!isAdminAuthorized(typeof body.key === 'string' ? body.key : undefined)) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-  }
   const patch = buildInviteePatch(body);
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'No editable fields in request' }, { status: 400 });
@@ -50,19 +47,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Update failed' }, { status: 409 });
   }
   return NextResponse.json({ ok: true });
-}
+});
 
 // Removes an invitee outright. Any registrations that arrived through this
 // invitee's link survive with a null inviteeId (schema onDelete: SetNull).
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withAdmin(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!isAdminAuthorized(typeof body.key === 'string' ? body.key : undefined)) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-  }
   const invitee = await prisma.invitee.delete({ where: { id } }).catch(() => null);
   if (!invitee) {
     return NextResponse.json({ error: 'Delete failed' }, { status: 409 });
   }
   return NextResponse.json({ ok: true });
-}
+});

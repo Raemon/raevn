@@ -45,13 +45,11 @@ const AdminRowsProvider = ({
   initialInvitees,
   initialGuests,
   initialMenuOptions,
-  adminKey,
   children,
 }: {
   initialInvitees: InviteeAdminRow[];
   initialGuests: GuestAdminRow[];
   initialMenuOptions: MenuOptionAdminRow[];
-  adminKey: string | null;
   children: ReactNode;
 }) => {
   const [invitees, setInvitees] = useState(initialInvitees);
@@ -83,7 +81,6 @@ const AdminRowsProvider = ({
       const startedAt = Date.now();
       const response = await fetch('/api/admin/rows', {
         cache: 'no-store',
-        headers: adminKey ? { 'x-admin-key': adminKey } : undefined,
       }).catch(() => null);
       if (!response?.ok || isCancelled) return;
       const rows = (await response.json().catch(() => null)) as {
@@ -111,7 +108,7 @@ const AdminRowsProvider = ({
       clearInterval(timer);
       document.removeEventListener('visibilitychange', pollOnReturn);
     };
-  }, [adminKey]);
+  }, []);
 
   return (
     <AdminRowsContext.Provider

@@ -1,9 +1,7 @@
-import Handfasting2 from './Handfasting2';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Save the date — Ray & Elizabeth',
-};
-
+// One public entrypoint, not two: / carries the cookie-gated experience, and
+// this old alias just forwards there so the gate can't drift out of sync.
 export default function Page() {
-  return <Handfasting2 />;
+  redirect('/');
 }

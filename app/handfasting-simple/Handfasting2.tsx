@@ -6,6 +6,7 @@ import TreeV4Tapestry from '../tapestry/TreeV4Tapestry';
 import { guestsToTapestryPersons } from '../tapestry/personAdapters';
 import { useGuestConstellation } from './guest-constellation/useGuestConstellation';
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
+import SaveTheDateFooter from './save-the-date/SaveTheDateFooter';
 import { cormorant, playfair } from './save-the-date/handfastingInvitationTypography';
 
 // Present when the page was reached through a tokenized invite link.
@@ -25,7 +26,7 @@ const Handfasting2 = ({
   // real thing rather than a lookalike that can drift.
   tapestrySection?: ReactNode;
 }) => {
-  const { guests, persistGuestThroughConstellationCatalog } = useGuestConstellation();
+  const { guests, persistGuestThroughConstellationCatalog, retireGuestFromConstellation } = useGuestConstellation();
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);
   // Neither of us gets top billing by default — the coin flip happens after
   // mount so the server and client renders still agree on first paint.
@@ -57,7 +58,7 @@ const Handfasting2 = ({
         className=" inset-0 z-0 bg-[url('/sunset.jpg')] bg-cover h-[100vh] fixed bg-[center_38%]"
         style={{ opacity: openingPictureOpacity }}
       />
-      <div className="relative z-10 box-border flex min-h-svh flex-col items-center justify-center text-center gap-16 text-center w-full">
+      <div className={`relative z-10 box-border flex min-h-svh flex-col items-center justify-center text-center gap-16 text-center w-full${personalization ? ' pb-52' : ''}`}>
         <div className="flex flex-col items-center">
           <h1
             className={`${playfair.className} mt-[500px] text-4xl md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#f1ece0] mb-4`}
@@ -93,21 +94,34 @@ const Handfasting2 = ({
         {/* The letter opens a `mt-12` below the title block; the RSVP buttons
             close the same distance below the signature so the letter sits
             evenly framed rather than crowding what follows it. */}
-        <div className={`flex flex-col items-center ${personalization ? 'mt-12' : ''}`}>
-          <GuestNameEntry
-            persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
-            className={`${cormorant.className}`}
-            prefilledGuestName={personalization?.inviteeName}
-            inviteToken={personalization?.inviteToken}
-          />
-        </div>
-        <SaveTheDateHeroAnnouncement />
-          <div className="mt-[2.75rem] mb-40 flex w-full flex-col items-center px-2">
+        {/* No invitation, no RSVP: the panel answers on behalf of a named
+            invitee, and nobody reaches this page without being one. The two of
+            us looking at it without an invite link simply see the rest. */}
+        {personalization && (
+          <div className="mt-12 flex flex-col items-center">
+            <GuestNameEntry
+              persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
+              retireGuestFromConstellation={retireGuestFromConstellation}
+              className={`${cormorant.className}`}
+              guestName={personalization.inviteeName}
+              inviteToken={personalization.inviteToken}
+            />
+          </div>
+        )}
+          <div className="mt-[2.75rem] flex w-full flex-col items-center px-2">
             {tapestrySection ?? (
               <TreeV4Tapestry persons={guestsToTapestryPersons(guests)} />
             )}
           </div>
+        {/* The date sits under the tree for hosts; invitees get it pinned in the
+            footer so the calendar links stay reachable while scrolling. */}
+        {!personalization && (
+          <div className="mb-40">
+            <SaveTheDateHeroAnnouncement />
+          </div>
+        )}
       </div>
+      {personalization && <SaveTheDateFooter />}
     </main>
   );
 };

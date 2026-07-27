@@ -45,7 +45,7 @@ const parseBooleanText = (text: string): boolean | undefined => {
   return undefined;
 };
 
-const GuestsTable = ({ adminKey }: { adminKey: string | null }) => {
+const GuestsTable = () => {
   // Rows live in AdminRowsProvider, which re-reads the database every few
   // seconds; setRows still applies our own edits the instant they save.
   const { guests: rows, updateGuests: setRows } = useAdminRows();
@@ -55,7 +55,7 @@ const GuestsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch(`/api/admin/guests/${guestId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...patch, key: adminKey ?? '' }),
+      body: JSON.stringify(patch),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) => beforeRows.map((row) => (row.id === guestId ? { ...row, ...patch } : row)));
@@ -68,7 +68,7 @@ const GuestsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch('/api/admin/guests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) {
       setNotice('Could not add a registration.');
@@ -83,7 +83,7 @@ const GuestsTable = ({ adminKey }: { adminKey: string | null }) => {
     const response = await fetch(`/api/admin/guests/${guestId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: adminKey ?? '' }),
+      body: JSON.stringify({}),
     }).catch(() => null);
     if (!response?.ok) return false;
     setRows((beforeRows) => beforeRows.filter((row) => row.id !== guestId));

@@ -38,10 +38,11 @@ async function reconcileOrRewindTransientPartyGlow(
   receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
   temporaryIdentifiers: string[],
   party: PartyRegistrationPayload,
-): Promise<void> {
+): Promise<GuestWithOptimistic[]> {
   try {
     const authoritativeRows = await replyWithPersistedPartyRows(party);
     confirmPartyPlaceholdersWithServerTruth(receiveGuestRows, temporaryIdentifiers, authoritativeRows);
+    return authoritativeRows;
   } catch {
     scrubFailedPartyPlaceholders(receiveGuestRows, temporaryIdentifiers);
     throw new Error('Registration did not reach the catalog');
@@ -49,17 +50,18 @@ async function reconcileOrRewindTransientPartyGlow(
 }
 
 // Binds submission + optimistic paint + persistence so tinkers tweak one cohesive story thread.
+// Returns the persisted rows, primary first, so the panel can keep editing the
+// registration it just made instead of posting a second one.
 
 export const commitAssembledPartyAgainstConstellationCatalog = async (
   receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
   party: PartyRegistrationPayload,
-): Promise<void> => {
+): Promise<GuestWithOptimistic[]> => {
   if (party.rsvp !== true) {
     // Declining and undecided parties are recorded but never painted in the sky.
-    await replyWithPersistedPartyRows(party);
-    return;
+    return await replyWithPersistedPartyRows(party);
   }
   const { placeholderRows, temporaryIdentifiers } = buildOptimisticPartyPlaceholders(party);
   appendTransientPartyGlow(receiveGuestRows, placeholderRows);
-  await reconcileOrRewindTransientPartyGlow(receiveGuestRows, temporaryIdentifiers, party);
+  return await reconcileOrRewindTransientPartyGlow(receiveGuestRows, temporaryIdentifiers, party);
 };

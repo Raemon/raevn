@@ -234,6 +234,16 @@ export type StrandWeaveOptions = {
   // Overrides the bundle-size rule entirely, for strands whose girth is a
   // design decision rather than a headcount — the couple's own two cords.
   amplitudeAt?: (progress: number) => number;
+  // Overrides the uniform arc-length winding entirely. The default spreads
+  // `twistTurns` evenly along the whole strand, which is right for a thread
+  // twisting in a bundle — but a braid that only opens over one stretch of the
+  // run needs its crossings pinned inside that stretch, in the same progress
+  // terms `amplitudeAt` uses.
+  turnAt?: (progress: number) => number;
+  // Sample count override. A braid confined to a short window of the run
+  // needs more samples than a thread that curves gently all the way, or its
+  // lobes come out with only a handful of points each and read as jagged.
+  samples?: number;
 };
 
 // Threads gather to a point at the very tip of their root, then fan apart as
@@ -263,12 +273,12 @@ export const buildStrandPath = (
 
 export const buildWovenStrand = (
   anchors: StrandAnchor[],
-  { threadSpacing, twistTurns, phase, beta, amplitudeAt }: StrandWeaveOptions,
+  { threadSpacing, twistTurns, phase, beta, amplitudeAt, turnAt, samples }: StrandWeaveOptions,
 ): WovenStrand => {
   const centreline = sampleBundleSpline(
     anchors.map((anchor) => anchor.point),
     beta,
-    STRAND_SAMPLES,
+    samples ?? STRAND_SAMPLES,
   );
 
   const cumulative = [0];
@@ -306,9 +316,9 @@ export const buildWovenStrand = (
         0.5 *
         (1 - Math.pow(progress, 2.6)) *
         Math.min(1, Math.pow(progress / ROOT_CONVERGE, ROOT_PINCH));
-    const turn = Math.sin(
-      2 * Math.PI * twistTurns * (cumulative[index] / totalLength) + phase,
-    );
+    const turn =
+      turnAt?.(progress) ??
+      Math.sin(2 * Math.PI * twistTurns * (cumulative[index] / totalLength) + phase);
     const swing = amplitude * turn;
     points.push({ x: point.x + normalX * swing, y: point.y + normalY * swing });
     swings.push(turn);
@@ -322,19 +332,28 @@ export const buildWovenStrand = (
 // strand nearer the viewer is laid down last, so it visibly passes over.
 export type WeaveRun = { start: number; end: number; front: boolean };
 
+// How far each run continues past the crossing it was cut at. One shared
+// sample merely lets the ribbons meet; a couple more makes the front ribbon
+// visibly lie ACROSS the back one, which is what sells each over-pass.
+const RUN_OVERLAP = 2;
+
 export const splitIntoWeaveRuns = (swing: number[]): WeaveRun[] => {
   const runs: WeaveRun[] = [];
+  const last = swing.length - 1;
   let start = 0;
   for (let i = 1; i < swing.length; i++) {
     const crossed = swing[i] >= 0 !== swing[i - 1] >= 0;
     if (!crossed) continue;
-    // Runs overlap by a sample at each cut, so the ribbons meet without a seam.
-    runs.push({ start: Math.max(0, start - 1), end: i, front: swing[start] >= 0 });
+    runs.push({
+      start: Math.max(0, start - RUN_OVERLAP),
+      end: Math.min(last, i + RUN_OVERLAP - 1),
+      front: swing[start] >= 0,
+    });
     start = i;
   }
   runs.push({
-    start: Math.max(0, start - 1),
-    end: swing.length - 1,
+    start: Math.max(0, start - RUN_OVERLAP),
+    end: last,
     front: swing[start] >= 0,
   });
   return runs;

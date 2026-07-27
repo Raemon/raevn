@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { withAdmin } from '@/lib/auth';
 import { DEFAULT_INVITATION_SETTING_KEY } from '@/lib/defaultInvitation';
 
 // Saves the shared default invitation letter edited at the top of /admin.
 // An empty editor clears the default entirely.
 
-export async function PATCH(request: Request) {
+export const PATCH = withAdmin(async (request: Request) => {
   const body = (await request.json()) as Record<string, unknown>;
-  if (!isAdminAuthorized(typeof body.key === 'string' ? body.key : undefined)) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
-  }
   const invitationHtml =
     typeof body.invitationHtml === 'string' && body.invitationHtml.trim() !== ''
       ? body.invitationHtml
@@ -25,4 +22,4 @@ export async function PATCH(request: Request) {
     });
   }
   return NextResponse.json({ ok: true });
-}
+});

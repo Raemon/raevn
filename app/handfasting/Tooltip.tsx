@@ -1,6 +1,6 @@
 "use client"
 import { useState, cloneElement, useEffect, useRef, type ReactElement, type ReactNode } from 'react';
-import { useFloating, useInteractions, useHover, FloatingPortal, shift, offset, safePolygon, flip, type Placement } from '@floating-ui/react';
+import { useFloating, useInteractions, useHover, useFocus, FloatingPortal, shift, offset, safePolygon, flip, type Placement } from '@floating-ui/react';
 
 export const Tooltip = ({
   children,
@@ -11,7 +11,9 @@ export const Tooltip = ({
   forceOpen = false,
   deactivate = false,
   styleManually = false,
-  accentColor
+  accentColor,
+  background,
+  surfaceClassName = ""
 }: {
   children: ReactElement;
   content: ReactNode;
@@ -22,6 +24,10 @@ export const Tooltip = ({
   deactivate?: boolean;
   styleManually?: boolean;
   accentColor?: string;
+  /** Surface background; defaults to the light parchment used elsewhere. */
+  background?: string;
+  /** Extra classes on the floating surface, for dark/custom variants. */
+  surfaceClassName?: string;
 }) => {
   const [open, setOpen] = useState(forceOpen ? true : false);
   const [hoverEnabled, setHoverEnabled] = useState(true);
@@ -47,8 +53,11 @@ export const Tooltip = ({
     handleClose: interactive ? safePolygon() : undefined,
     enabled: hoverEnabled
   });
+  // Keyboard users get the same preview by tabbing to the trigger.
+  const focus = useFocus(context);
   const { getReferenceProps, getFloatingProps } = useInteractions([
     hover,
+    focus,
   ]);
 
   useEffect(() => {
@@ -80,7 +89,7 @@ export const Tooltip = ({
     ...getReferenceProps(),
   };
 
-  const color = "#fffff8" //"rgba(240, 233, 211, 0.95)"
+  const color = background ?? "#fffff8" //"rgba(240, 233, 211, 0.95)"
   return (
     <>
       {cloneElement(children, elementProps)}
@@ -90,7 +99,7 @@ export const Tooltip = ({
           style={{ ...floatingStyles, maxWidth: `min(${maxWidth}px, 90vw)`, backgroundColor: color, boxShadow: '1px 1px 300px 0px rgba(10, 10, 0, 0.1), 1px 1px 3px 0px rgba(0, 0, 0, 0.2)', ...(accentColor ? { borderLeft: `3px solid ${accentColor}` } : {}) }}
           {...getFloatingProps()}
           data-tooltip-surface="true"
-          className={!styleManually ? `text-black border border-transparent rounded-sm z-[1000] p-2 text-xs font-mono` : "z-[1000] p-2"}
+          className={`${!styleManually ? `text-black border border-transparent rounded-sm z-[1000] p-2 text-xs font-mono` : "z-[1000] p-2"} ${surfaceClassName}`}
         >
           {content}
         </div>

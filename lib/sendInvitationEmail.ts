@@ -1,14 +1,15 @@
 import nodemailer from 'nodemailer';
 import type { Invitee } from '@prisma/client';
+import { renderInvitationEmailBody } from '@/lib/invitationEmail';
 
-// Sends one invitation. The body is exactly the host-authored content from the
-// /admin TipTap editor (the invitee's personal letter or the site default)
-// plus the guest's personal link — no generated copy. Only ever called from
-// the send-invitations route when a host clicks Send.
+// Sends one invitation. The subject and body are exactly what the host wrote in
+// the invitation-email form on /admin, plus the guest's personal link — no
+// generated copy. Only ever called from the send-invitations route when a host
+// clicks Send.
 
 export async function sendInvitationEmail(
   invitee: Invitee,
-  invitationHtml: string,
+  email: { subject: string; bodyHtml: string },
   inviteUrl: string,
 ): Promise<{ ok: boolean; reason?: string }> {
   const gmailUser = process.env.GMAIL_NOTIFICATION_USER;
@@ -25,8 +26,8 @@ export async function sendInvitationEmail(
     await transporter.sendMail({
       from: `Ray & Elizabeth <${gmailUser}>`,
       to: invitee.email,
-      subject: 'An invitation from Ray & Elizabeth',
-      html: `${invitationHtml}\n<p><a href="${inviteUrl}">${inviteUrl}</a></p>`,
+      subject: email.subject,
+      html: renderInvitationEmailBody(email.bodyHtml, inviteUrl),
     });
     return { ok: true };
   } catch (sendError) {
