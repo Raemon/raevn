@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import type { Diet } from '@prisma/client';
 import type { FamilyMemberDraft, PartyRegistrationPayload } from './partyRegistrationTypes';
 import {
-  deriveDietFromCheckboxes,
   discardFamilyMemberDraft,
   mintEmptyFamilyMemberDraft,
   patchFamilyMemberDraft,
@@ -14,7 +14,7 @@ import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH } from './partyLimits';
 // assembles the wire payload with the same trim/drop-empties rules the server applies.
 
 export const usePartyRegistrationDraft = (inviteToken?: string) => {
-  const [primaryDiet, setPrimaryDiet] = useState({ vegan: false, vegetarian: false });
+  const [primaryDiet, setPrimaryDiet] = useState<Diet>('omnivore');
   const [familyDrafts, setFamilyDrafts] = useState<FamilyMemberDraft[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,14 +29,14 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
 
   const assemblePartyPayload = (enteredNameTrimmed: string): PartyRegistrationPayload => ({
     name: enteredNameTrimmed.slice(0, MAX_GUEST_NAME_LENGTH),
-    diet: deriveDietFromCheckboxes(primaryDiet.vegan, primaryDiet.vegetarian),
+    diet: primaryDiet,
     // Registering means attending; the form no longer asks.
     rsvp: true,
     ...(inviteToken ? { inviteToken } : {}),
     family: familyDrafts
       .map((draft) => ({
         name: draft.name.trim().slice(0, MAX_GUEST_NAME_LENGTH),
-        diet: deriveDietFromCheckboxes(draft.vegan, draft.vegetarian),
+        diet: draft.diet,
         isChildUnder2: draft.isChildUnder2,
         needsHighChair: draft.needsHighChair,
       }))
@@ -44,7 +44,7 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
   });
 
   const resetPartyDraft = (): void => {
-    setPrimaryDiet({ vegan: false, vegetarian: false });
+    setPrimaryDiet('omnivore');
     setFamilyDrafts([]);
   };
 
