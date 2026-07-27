@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { GuestWithOptimistic } from './guestTypes';
 import type { PartyRegistrationPayload } from './partyRegistrationTypes';
+import type { InviteeTapestryHint } from '../../tapestry/tapestryTypes';
 import { buildOptimisticPartyPlaceholders } from './buildOptimisticGuestPlaceholder';
 import { dropGuestRowsByIdentifiers, stitchAuthoritativePartyOverPlaceholders } from './guestRowTransforms';
 import { replyWithPersistedPartyRows } from './replyWithPersistedPartyRows';
@@ -56,12 +57,31 @@ async function reconcileOrRewindTransientPartyGlow(
 export const commitAssembledPartyAgainstConstellationCatalog = async (
   receiveGuestRows: Dispatch<SetStateAction<GuestWithOptimistic[]>>,
   party: PartyRegistrationPayload,
+  options?: {
+    inviteeTapestryHint?: InviteeTapestryHint;
+    onPrimaryArrival?: (guestId: string | null) => void;
+  },
 ): Promise<GuestWithOptimistic[]> => {
   if (party.rsvp !== true) {
     // Declining and undecided parties are recorded but never painted in the sky.
     return await replyWithPersistedPartyRows(party);
   }
-  const { placeholderRows, temporaryIdentifiers } = buildOptimisticPartyPlaceholders(party);
+  const { placeholderRows, temporaryIdentifiers } = buildOptimisticPartyPlaceholders(
+    party,
+    options?.inviteeTapestryHint,
+  );
+  options?.onPrimaryArrival?.(temporaryIdentifiers[0] ?? null);
   appendTransientPartyGlow(receiveGuestRows, placeholderRows);
-  return await reconcileOrRewindTransientPartyGlow(receiveGuestRows, temporaryIdentifiers, party);
+  try {
+    const authoritativeRows = await reconcileOrRewindTransientPartyGlow(
+      receiveGuestRows,
+      temporaryIdentifiers,
+      party,
+    );
+    options?.onPrimaryArrival?.(authoritativeRows[0]?.id ?? null);
+    return authoritativeRows;
+  } catch (error) {
+    options?.onPrimaryArrival?.(null);
+    throw error;
+  }
 };

@@ -32,6 +32,9 @@ export const Tooltip = ({
   const [open, setOpen] = useState(forceOpen ? true : false);
   const [hoverEnabled, setHoverEnabled] = useState(true);
   const lastMousePos = useRef<{x: number, y: number} | null>(null);
+  useEffect(() => {
+    if (forceOpen) setOpen(true);
+  }, [forceOpen]);
   const { refs, floatingStyles, context } = useFloating({
     open: open,
     onOpenChange: forceOpen ? undefined : (newOpen) => {

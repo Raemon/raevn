@@ -20,3 +20,10 @@ export type TapestryPerson = {
 // gives each strand the same short delay, so an arrival added to an
 // already-drawn tapestry animates in alone.
 export type TapestryEntrance = 'staggered' | 'single';
+
+// Side and hover copy for the invitee behind a tokenized link — carried on
+// optimistic rows so the tapestry can place and caption them before Neon answers.
+export type InviteeTapestryHint = {
+  side: string;
+  diagramHovertext?: string | null;
+};

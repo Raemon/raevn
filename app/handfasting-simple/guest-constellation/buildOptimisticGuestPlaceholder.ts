@@ -1,5 +1,6 @@
 import type { GuestWithOptimistic } from './guestTypes';
 import type { PartyMemberSubmission, PartyRegistrationPayload } from './partyRegistrationTypes';
+import type { InviteeTapestryHint } from '../../tapestry/tapestryTypes';
 import { issueTemporaryGuestIdentity } from './issueTemporaryGuestIdentity';
 
 // Fabricates believable placeholders so optimistic UI feels instant beneath the skyline.
@@ -20,6 +21,7 @@ export const buildOptimisticGuestPlaceholder = (
   // The note never shows in the sky, so the placeholder need not carry it.
   note: null,
   inviteeId: null,
+  invitee: null,
   meaningful: false,
   plusOne: '',
   createdAt: new Date().toISOString(),
@@ -31,6 +33,7 @@ export const buildOptimisticGuestPlaceholder = (
 
 export const buildOptimisticPartyPlaceholders = (
   party: PartyRegistrationPayload,
+  inviteeTapestryHint?: InviteeTapestryHint,
 ): { placeholderRows: GuestWithOptimistic[]; temporaryIdentifiers: string[] } => {
   const primaryAsMember: PartyMemberSubmission = {
     name: party.name,
@@ -40,13 +43,20 @@ export const buildOptimisticPartyPlaceholders = (
   };
   const partyMembers = [primaryAsMember, ...party.family];
   const temporaryIdentifiers = partyMembers.map(() => issueTemporaryGuestIdentity());
-  const placeholderRows = partyMembers.map((member, memberIndex) =>
-    buildOptimisticGuestPlaceholder(
+  const placeholderRows = partyMembers.map((member, memberIndex) => {
+    const row = buildOptimisticGuestPlaceholder(
       member,
       temporaryIdentifiers[memberIndex],
       party.rsvp,
       memberIndex === 0 ? null : temporaryIdentifiers[0],
-    ),
-  );
+    );
+    if (memberIndex === 0 && inviteeTapestryHint) {
+      row.invitee = {
+        side: inviteeTapestryHint.side,
+        diagramHovertext: inviteeTapestryHint.diagramHovertext ?? null,
+      };
+    }
+    return row;
+  });
   return { placeholderRows, temporaryIdentifiers };
 };

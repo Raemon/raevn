@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Tooltip } from '../handfasting/Tooltip';
 import { cormorant, playfair } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
 
@@ -12,6 +13,7 @@ const TapestryNameLabel = ({
   fadeDelay,
   name,
   hovertext,
+  forceTooltipOpen = false,
 }: {
   x: number;
   y: number;
@@ -21,7 +23,18 @@ const TapestryNameLabel = ({
   fadeDelay: string;
   name: string;
   hovertext?: string | null;
+  forceTooltipOpen?: boolean;
 }) => {
+  const [showCelebrationTooltip, setShowCelebrationTooltip] = useState(false);
+  useEffect(() => {
+    if (!forceTooltipOpen) {
+      setShowCelebrationTooltip(false);
+      return;
+    }
+    const revealMs = Math.max(0, parseFloat(fadeDelay) * 1000);
+    const timer = setTimeout(() => setShowCelebrationTooltip(true), revealMs);
+    return () => clearTimeout(timer);
+  }, [forceTooltipOpen, fadeDelay]);
   const text = (
     <text
       x={x}
@@ -45,6 +58,7 @@ const TapestryNameLabel = ({
       placement="top"
       maxWidth={280}
       styleManually
+      forceOpen={showCelebrationTooltip}
       background="rgba(0, 0, 0, 0.9)"
       surfaceClassName={`${cormorant.className} rounded-md border border-white/25 text-left text-[0.95rem] font-light italic tracking-[0.03em] text-[#e9e3d4]`}
       content={hovertext}

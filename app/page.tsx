@@ -77,6 +77,8 @@ export default async function Page() {
         inviteeName: invitee.name,
         inviteToken: invitee.inviteToken ?? '',
         invitationHtml,
+        side: invitee.side,
+        diagramHovertext: invitee.diagramHovertext,
       }}
     />
   );

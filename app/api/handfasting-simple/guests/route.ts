@@ -88,5 +88,13 @@ export async function POST(request: Request) {
     return [primary, ...familyRows];
   });
   void notifyHostsOfNewGuestRegistration(partyRows);
-  return NextResponse.json(partyRows);
+  const inviteeTapestry = invitee
+    ? { side: invitee.side, diagramHovertext: invitee.diagramHovertext }
+    : null;
+  return NextResponse.json(
+    partyRows.map((row) => ({
+      ...row,
+      invitee: inviteeTapestry,
+    })),
+  );
 }

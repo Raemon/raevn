@@ -119,15 +119,22 @@ const leafOutline = (length: number, width: number) =>
 const TreeV4Tapestry = ({
   persons,
   entrance = 'staggered',
+  celebratePersonId,
 }: {
   persons: TapestryPerson[];
   entrance?: TapestryEntrance;
+  // When set, that person's strand draws on the fast 'single' clock and their
+  // diagram hovertext opens without waiting for a cursor.
+  celebratePersonId?: string | null;
 }) => {
+  const isSingleEntrance = entrance === 'single';
+  const threadDrawSeconds = isSingleEntrance ? 1.2 : THREAD_DRAW_SECONDS;
+  const leafFadeSeconds = isSingleEntrance ? 0.75 : 1.3;
   // When a branch starts drawing, and when the leaf on the end of it is allowed
   // to appear — always one full draw later, so the leaf lands on finished wood.
   const threadDelayFor = (slotIndex: number) =>
-    entrance === 'staggered' ? 0.3 + slotIndex * 0.012 : 0.1;
-  const leafDelayFor = (slotIndex: number) => threadDelayFor(slotIndex) + THREAD_DRAW_SECONDS;
+    entrance === 'staggered' ? 0.3 + slotIndex * 0.012 : 0.05;
+  const leafDelayFor = (slotIndex: number) => threadDelayFor(slotIndex) + threadDrawSeconds;
 
   const growth = 1 - Math.exp(-persons.length / GROWTH_SATURATION);
   // The trunk is deliberately short — a stem for the crown to sit on, not the
@@ -408,15 +415,15 @@ const TreeV4Tapestry = ({
         .rvtree4-thread {
           stroke-dasharray: 1;
           stroke-dashoffset: 1;
-          animation: rvtree4Draw ${THREAD_DRAW_SECONDS}s cubic-bezier(0.36, 0, 0.28, 1) forwards;
+          animation: rvtree4Draw ${threadDrawSeconds}s cubic-bezier(0.36, 0, 0.28, 1) forwards;
         }
         .rvtree4-cord {
           opacity: 0;
-          animation: rvtree4Fade ${THREAD_DRAW_SECONDS}s ease forwards;
+          animation: rvtree4Fade ${threadDrawSeconds}s ease forwards;
         }
         .rvtree4-leaf {
           opacity: 0;
-          animation: rvtree4Fade 1.3s ease forwards;
+          animation: rvtree4Fade ${leafFadeSeconds}s ease forwards;
         }
         .rvtree4-tree {
           transform-origin: ${CANOPY_X}px ${ROOT_Y}px;
@@ -547,7 +554,7 @@ const TreeV4Tapestry = ({
                 fill={cord.color}
                 fillOpacity={0.92}
                 className="rvtree4-leaf"
-                style={{ animationDelay: `${THREAD_DRAW_SECONDS}s` }}
+                style={{ animationDelay: `${threadDrawSeconds}s` }}
               />
             </g>
           ))}
@@ -602,6 +609,7 @@ const TreeV4Tapestry = ({
                   fadeDelay={fadeDelay}
                   name={truncateName(slot.person.name, maxNameChars)}
                   hovertext={slot.person.hovertext}
+                  forceTooltipOpen={slot.person.id === celebratePersonId && !!slot.person.hovertext}
                 />
               </g>
             );

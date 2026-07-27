@@ -14,6 +14,8 @@ export type PersonalizedInvitation = {
   inviteeName: string;
   inviteToken: string;
   invitationHtml: string | null;
+  side: string;
+  diagramHovertext?: string | null;
 };
 
 const Handfasting2 = ({
@@ -26,7 +28,12 @@ const Handfasting2 = ({
   // real thing rather than a lookalike that can drift.
   tapestrySection?: ReactNode;
 }) => {
-  const { guests, persistGuestThroughConstellationCatalog, retireGuestFromConstellation } = useGuestConstellation();
+  const { guests, celebratedPrimaryId, persistGuestThroughConstellationCatalog, retireGuestFromConstellation } =
+    useGuestConstellation(
+      personalization
+        ? { side: personalization.side, diagramHovertext: personalization.diagramHovertext }
+        : undefined,
+    );
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);
   // Neither of us gets top billing by default — the coin flip happens after
   // mount so the server and client renders still agree on first paint.
@@ -110,7 +117,11 @@ const Handfasting2 = ({
         )}
           <div className="mt-[2.75rem] flex w-full flex-col items-center px-2">
             {tapestrySection ?? (
-              <TreeV4Tapestry persons={guestsToTapestryPersons(guests)} />
+              <TreeV4Tapestry
+                persons={guestsToTapestryPersons(guests)}
+                entrance={celebratedPrimaryId ? 'single' : 'staggered'}
+                celebratePersonId={celebratedPrimaryId}
+              />
             )}
           </div>
         {/* The date sits under the tree; invitees get it in a footer band. */}
