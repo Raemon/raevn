@@ -7,5 +7,5 @@ type GuestJson = Omit<Guest, 'createdAt'> & { createdAt: string };
 // registrations simply lack it.
 export type GuestWithOptimistic = GuestJson & {
   optimistic?: boolean;
-  invitee?: { side: string } | null;
+  invitee?: { side: string; diagramHovertext?: string | null } | null;
 };

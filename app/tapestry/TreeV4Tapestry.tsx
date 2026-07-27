@@ -13,6 +13,7 @@ import {
   type StrandSlot,
   type Vec,
 } from './strandTree';
+import TapestryNameLabel from './TapestryNameLabel';
 import type { TapestryEntrance, TapestryPerson } from './tapestryTypes';
 
 // A tree embroidered out of thread. Every guest is one continuous strand
@@ -592,22 +593,16 @@ const TreeV4Tapestry = ({
                     style={{ animationDelay: fadeDelay }}
                   />
                 </g>
-                <text
+                <TapestryNameLabel
                   x={labelPoint.x}
                   y={labelY.get(slot.person.id) ?? labelPoint.y}
                   textAnchor={flip ? 'end' : 'start'}
-                  dominantBaseline="middle"
-                  className={`${playfair.className} rvtree4-leaf`}
-                  style={{
-                    animationDelay: fadeDelay,
-                    transition: 'x 1100ms ease, y 1100ms ease, font-size 1100ms ease',
-                  }}
                   fontSize={nameFontSize}
                   fill={color}
-                >
-                  {slot.person.hovertext ? <title>{slot.person.hovertext}</title> : null}
-                  {truncateName(slot.person.name, maxNameChars)}
-                </text>
+                  fadeDelay={fadeDelay}
+                  name={truncateName(slot.person.name, maxNameChars)}
+                  hovertext={slot.person.hovertext}
+                />
               </g>
             );
           })}

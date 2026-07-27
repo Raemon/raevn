@@ -19,6 +19,7 @@ export const guestsToTapestryPersons = (guests: GuestWithOptimistic[]): Tapestry
     name: guest.name,
     side: resolveSide(guest.invitee?.side, guest.registeredById ?? guest.id),
     familyKey: guest.registeredById ?? guest.id,
+    hovertext: guest.registeredById ? null : guest.invitee?.diagramHovertext ?? null,
   }));
 
 export const inviteeRowToTapestryPerson = (invitee: {
