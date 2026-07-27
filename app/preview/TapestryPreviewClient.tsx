@@ -12,6 +12,8 @@ import { cormorant } from '../handfasting-simple/save-the-date/handfastingInvita
 const VARIANTS: Array<{ key: TapestryVariant; label: string }> = [
   { key: 'knot', label: 'The Handfasting Knot' },
   { key: 'tree', label: 'The Living Tree' },
+  { key: 'tree2', label: 'Tree v2' },
+  { key: 'tree3', label: 'Tree v3' },
   { key: 'wreath', label: 'The Woven Wreath' },
 ];
 

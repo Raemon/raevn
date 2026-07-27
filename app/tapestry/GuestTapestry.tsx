@@ -1,5 +1,7 @@
 import KnotTapestry from './KnotTapestry';
 import TreeTapestry from './TreeTapestry';
+import TreeV2Tapestry from './TreeV2Tapestry';
+import TreeV3Tapestry from './TreeV3Tapestry';
 import WreathTapestry from './WreathTapestry';
 import type { TapestryEntrance, TapestryPerson, TapestryVariant } from './tapestryTypes';
 
@@ -16,6 +18,8 @@ const GuestTapestry = ({
   entrance?: TapestryEntrance;
 }) => {
   if (variant === 'tree') return <TreeTapestry persons={persons} entrance={entrance} />;
+  if (variant === 'tree2') return <TreeV2Tapestry persons={persons} entrance={entrance} />;
+  if (variant === 'tree3') return <TreeV3Tapestry persons={persons} entrance={entrance} />;
   if (variant === 'wreath') return <WreathTapestry persons={persons} entrance={entrance} />;
   return <KnotTapestry persons={persons} entrance={entrance} />;
 };

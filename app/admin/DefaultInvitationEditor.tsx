@@ -12,7 +12,7 @@ import { cormorant } from '../handfasting-simple/save-the-date/handfastingInvita
 
 // Mirrors the invitation letter styling in Handfasting2.tsx — keep in sync.
 const inviteLetterClassName =
-  'w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-3 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic';
+  'w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-8 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic';
 
 const toolbarButtonClassName =
   'bg-transparent text-xs uppercase tracking-[0.2em] transition-colors hover:text-[#e9e3d4]';

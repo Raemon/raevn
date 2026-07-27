@@ -30,6 +30,12 @@ const Handfasting2 = ({
 }) => {
   const { guests, persistGuestThroughConstellationCatalog } = useGuestConstellation();
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);
+  // Neither of us gets top billing by default — the coin flip happens after
+  // mount so the server and client renders still agree on first paint.
+  const [signatureNames, setSignatureNames] = useState('Raymond and Elizabeth');
+  useEffect(() => {
+    if (Math.random() < 0.5) setSignatureNames('Elizabeth and Raymond');
+  }, []);
   // ?tapestry=tree|knot|wreath previews an alternate arrangement in place;
   // read post-mount so the server render stays static.
   const [tapestryVariant, setTapestryVariant] = useState<TapestryVariant>(LIVE_TAPESTRY_VARIANT);
@@ -75,17 +81,23 @@ const Handfasting2 = ({
           </h3>
         </div>
         {personalization && (
-          <div className="flex w-full max-w-xl flex-col items-center gap-4 px-4">
+          <div className="mt-12 flex w-full max-w-xl flex-col items-center gap-8 px-4">
             <p className={`${cormorant.className} m-0 text-[clamp(1.2rem,2vw,1.6rem)] font-light italic tracking-[0.04em] text-[#e9e3d4]`}>
               Dear {personalization.inviteeName},
             </p>
             {personalization.invitationHtml && (
               <div
-                className={`${cormorant.className} w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-3 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic`}
+                // The outer margins are zeroed so the letter's own edges sit a
+                // single gap away from the salutation and signature, matching
+                // the spacing between its paragraphs rather than doubling it.
+                className={`${cormorant.className} w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-8 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic`}
                 // Host-authored content from the /admin TipTap editor.
                 dangerouslySetInnerHTML={{ __html: personalization.invitationHtml }}
               />
             )}
+            <p className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.3rem)] font-light italic tracking-[0.04em] text-[#e9e3d4]`}>
+              &ndash; {signatureNames}
+            </p>
           </div>
         )}
         <div className="flex flex-col items-center">

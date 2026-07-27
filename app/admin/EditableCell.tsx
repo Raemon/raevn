@@ -7,6 +7,19 @@ import { adminMutedClassName } from './adminTableStyles';
 // persists to the database and returns false to reject the edit (the cell
 // then reverts to its previous value).
 
+// The editing box is a textarea that inherits the cell's own type size and
+// grows to whatever the text needs, so a long value (a note, a diagram
+// hovertext) reads the same while being edited as it does once saved —
+// rather than shrinking into one horizontally scrolling line.
+const fitHeightToContent = (element: HTMLTextAreaElement | null) => {
+  if (!element) return;
+  element.style.height = 'auto';
+  // scrollHeight covers content and padding but not the border, which
+  // border-box sizing would otherwise take back out of the height we set.
+  const borderHeight = element.offsetHeight - element.clientHeight;
+  element.style.height = `${element.scrollHeight + borderHeight}px`;
+};
+
 const EditableCell = ({
   value,
   placeholder = '—',
@@ -22,9 +35,10 @@ const EditableCell = ({
   const [draft, setDraft] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
   const cancelledRef = useRef(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (!isEditing) return;
+    fitHeightToContent(inputRef.current);
     inputRef.current?.focus();
     inputRef.current?.select();
   }, [isEditing]);
@@ -45,20 +59,28 @@ const EditableCell = ({
   };
   if (isEditing) {
     return (
-      <input
+      <textarea
         ref={inputRef}
-        type="text"
+        rows={1}
         value={draft}
-        onChange={(changeEvent) => setDraft(changeEvent.target.value)}
+        onChange={(changeEvent) => {
+          setDraft(changeEvent.target.value);
+          fitHeightToContent(changeEvent.target);
+        }}
         onBlur={commitDraft}
         onKeyDown={(keyEvent) => {
-          if (keyEvent.key === 'Enter') inputRef.current?.blur();
+          // Enter still saves, the way it did when this was one line; a
+          // deliberate Shift+Enter is the way to write a second line.
+          if (keyEvent.key === 'Enter' && !keyEvent.shiftKey) {
+            keyEvent.preventDefault();
+            inputRef.current?.blur();
+          }
           if (keyEvent.key === 'Escape') {
             cancelledRef.current = true;
             inputRef.current?.blur();
           }
         }}
-        className="w-full min-w-24 rounded-sm border border-[#b99a5e] bg-white px-2 py-1 text-base text-[#1f1c18] outline-none focus:border-[#7a5a1c]"
+        className="w-full min-w-24 resize-none overflow-hidden rounded-sm border border-[#b99a5e] bg-white px-2 py-1 leading-[inherit] text-[#1f1c18] outline-none focus:border-[#7a5a1c]"
       />
     );
   }
@@ -66,6 +88,10 @@ const EditableCell = ({
     <span
       onDoubleClick={beginEditing}
       title="Double-click to edit"
+      // A value that was typed across lines reads back across the same lines;
+      // set only when there are newlines, so the columns that ask for one
+      // unbroken line (email) keep it.
+      style={value.includes('\n') ? { whiteSpace: 'pre-wrap' } : undefined}
       className={`block min-h-6 cursor-text ${isSaving ? 'opacity-50' : ''} ${className}`}
     >
       {value !== '' ? value : <span className={adminMutedClassName}>{placeholder}</span>}

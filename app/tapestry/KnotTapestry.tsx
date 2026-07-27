@@ -1,304 +1,201 @@
 import { line, curveCatmullRom } from 'd3-shape';
-import { playfair } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
-import { NAME_INK, PAGE_BLACK, pickThreadColor, truncateName } from './tapestryPalette';
-import { groupIntoFamilies } from './tapestryOrdering';
-import { createSeededRandom, hashStringToSeed } from './tapestrySeededRandom';
+import { playfair, cormorant } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
+import { PAGE_BLACK, pickThreadColor, truncateName } from './tapestryPalette';
+import { groupIntoFamilies, orderPersonsForTapestry } from './tapestryOrdering';
+import { createSeededRandom } from './tapestrySeededRandom';
 import type { TapestryEntrance, TapestryPerson } from './tapestryTypes';
 
-// An oak. The braided cord falling from the knot is the trunk; it rises
-// through the knot and up the centre, past the friends the couple share, to
-// Elizabeth and Ray side by side at the crown. Everyone else is a bough.
+// An oak grown out of a handfasting cord.
 //
-// The two boughs are arcs in the shape of a spreading canopy: they start close
-// to the trunk up at the crown, sweep out to their widest around the knot, and
-// curve back inward as they fall past it — so the names wrap around the knot
-// instead of stopping above it, and the outline arcs in at both ends.
+// Two cords — hers silver-blue, his wine — braid the whole length of the
+// trunk, are bound tight with a few wraps at the foot, and fall away below as
+// the loose ends. Out of that trunk spreads a real crown: boughs radiating at
+// their own angles, each splitting into a twig per household, each household
+// into a leaf per guest.
 //
-// Every guest is still one thread. Elizabeth's people loop the left lobe of
-// the infinity knot, Ray's the right, shared friends trace the whole
-// figure-eight around both — then all of it braids into the single cord below.
+// The canopy is a radial fan, not two facing columns — boughs leave at
+// scattered angles and lengths, so nothing lines up into a mirrored pair.
+// Elizabeth's people fill the left sky, Ray's the right, and the friends the
+// couple share sit at the top of the sweep, crowning the tree between them.
 //
-// Two things make it read as branching rather than as a bundle: a bough joins
-// the trunk at its OWN height (crown names high, low names low), and the trunk
-// is a set of parallel lanes — shared friends innermost, then the couple, then
-// each side's bough rail — so no thread ever crosses a name to get where it is
-// going. The low boughs sweep a long way up and in, which is what gives the
-// canopy its fan.
+// Names are horizontal everywhere; nothing is set on an angle. A radial canopy
+// puts far too many leaves at the same height to label each one in place, so
+// the labels ride a halo just outside the crown: each side's names are dealt
+// into evenly spaced bands, and each sits at the crown's own width for its
+// band — so the block of names traces the outline of the tree, and a hair of a
+// stem ties each name back to its leaf.
 //
-// Names are horizontal everywhere; nothing is set on an angle.
-//
-// Guest geometry depends on the counts, so paths carry a CSS `d` transition —
-// each arrival gently re-weaves the cord (browsers without `d` transitions
+// Canopy geometry depends on the counts, so limbs carry a CSS `d` transition —
+// each arrival gently re-grows the crown (browsers without `d` transitions
 // just snap).
-const VIEW_W = 1200;
-const VIEW_H = 1440;
-const KNOT_X = 600;
-const KNOT_Y = 770;
-const LOBE_RADIUS = 215;
-const LOBE_Y_SCALE = 1.55;
-const CORD_HALF_WIDTH = 17;
+const VIEW_W = 1240;
+const VIEW_BOX = '0 150 1240 1250';
+const CANOPY_X = 620;
+const CANOPY_Y = 660;
 
-// The canopy edge. A name's distance from the trunk is a function of its
-// height: close in at the crown, widest around the knot, arcing back in as the
-// bough falls past it.
-const ARC_TOP_Y = 118;
-const ARC_BOTTOM_Y = 1040;
-const ARC_MID_Y = (ARC_TOP_Y + ARC_BOTTOM_Y) / 2;
-const ARC_DX_TOP = 210;
-const ARC_DX_MAX = 400;
-const ARC_DX_END = 300;
-const ARC_THETA_TOP = Math.asin(ARC_DX_TOP / ARC_DX_MAX);
-const ARC_THETA_END = Math.PI - Math.asin(ARC_DX_END / ARC_DX_MAX);
-const MAX_ROW_GAP = 56;
-const NAME_GAP = 14;
+// The crown is an ellipse — taller than it is wide — so that horizontal names
+// have somewhere to go. Ring radii step outward from these.
+const RX_BASE = 168;
+const RX_STEP = 52;
+const RY_BASE = 214;
+const RY_STEP = 74;
+const SECTOR_START = (-196 * Math.PI) / 180;
+const SECTOR_END = (16 * Math.PI) / 180;
 
-// Trunk lanes, innermost first. Shared friends get a lane each, sized to clear
-// the widest name still below them, so their strands taper to a chalice as the
-// list runs out rather than falling as one flat-sided box.
-const CENTER_LANE_MIN = 44;
-const CENTER_LANE_MAX = 132;
-const FOUNDER_RAIL_DX = 156;
-const BOUGH_RAIL_DX = 180;
+// The halo the names ride, just outside the outermost ring.
+const HALO_RX = RX_BASE + 3 * RX_STEP + 26;
+const HALO_RY = RY_BASE + 3 * RY_STEP + 40;
+const HALO_RX_MIN = 205;
+const HALO_PAD = 15;
+const BAND_TOP = 208;
+const BAND_BOTTOM = 1000;
+const BAND_MID = (BAND_TOP + BAND_BOTTOM) / 2;
+const MAX_BAND_GAP = 34;
 
-// A bough meets the trunk somewhere along this stretch — crown boughs join
-// high, the ones falling past the knot join low.
-const TRUNK_JOIN_TOP = 300;
-const TRUNK_JOIN_BOTTOM = KNOT_Y - 150;
+// The cord: braided the length of the trunk, bound at the foot, ends falling.
+const TRUNK_BRAID_DX = 21;
+const BIND_TOP = 986;
+const BIND_BOTTOM = 1064;
+const TAIL_END = 1214;
 
-// The crown: the couple close together over the trunk, the friends they share
-// gathered just beneath them.
-const FOUNDER_Y = 90;
-const FOUNDER_NAME_GAP = 26;
-const FOUNDER_START_DX = 88;
-const CENTER_TOP = 138;
-const CENTER_BOTTOM = 402;
-const CENTER_MAX_GAP = 31;
-
-const LOBE_SAMPLES = 56;
-const TAIL_SAMPLES = 26;
-const TAIL_BASE_END = 1345;
+const BARK = '#9b7b4c';
+const CORD_BIND = '#cbbfa4';
+const ELIZABETH_INK = '#cdd9e9';
+const RAY_INK = '#d9848f';
+const EDGE_MARGIN = 16;
+// Playfair runs a little over half its point size per mixed-case character.
+const CHAR_WIDTH_RATIO = 0.55;
 const REWEAVE_TRANSITION = 'd 900ms ease';
 
-// Playfair runs a little over half its point size per mixed-case character.
-// Used both to trim names to the room actually beside them and to start each
-// shared friend's thread at the end of their own name.
-const CHAR_WIDTH_RATIO = 0.55;
-// The -22 is slack: CHAR_WIDTH_RATIO under-reads Playfair's widest glyphs, and
-// the canopy's outermost names sit within a few units of the canvas edge.
-const SIDE_NAME_ROOM = VIEW_W / 2 - ARC_DX_MAX - NAME_GAP - 22;
-const CENTER_NAME_ROOM = (CENTER_LANE_MAX - 14) * 2;
-
 type Point = { x: number; y: number };
-type KnotGroup = 'left' | 'right' | 'center';
-type KnotThread = {
-  person: TapestryPerson;
-  group: KnotGroup;
-  rowIndex: number;
-  rowCount: number;
-};
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
-const fitChars = (room: number, fontSize: number) =>
-  Math.max(6, Math.floor(room / (fontSize * CHAR_WIDTH_RATIO)));
-const halfNameWidth = (text: string, fontSize: number) =>
-  (text.length * fontSize * CHAR_WIDTH_RATIO) / 2;
+const ellipse = (theta: number, rx: number, ry: number): Point => ({
+  x: CANOPY_X + rx * Math.cos(theta),
+  y: CANOPY_Y + ry * Math.sin(theta),
+});
 
-const lemniscatePoint = (t: number): Point => {
-  const denom = 1 + Math.sin(t) ** 2;
-  return {
-    x: KNOT_X + (LOBE_RADIUS * Math.cos(t)) / denom,
-    y: KNOT_Y + (LOBE_RADIUS * LOBE_Y_SCALE * Math.sin(t) * Math.cos(t)) / denom,
-  };
+// The crown's own half-width at a given height — what makes the block of names
+// bow out around the middle of the tree and draw back in at the top.
+const haloRx = (y: number): number => {
+  const t = (y - CANOPY_Y) / HALO_RY;
+  return Math.max(HALO_RX_MIN, HALO_RX * Math.sqrt(Math.max(0, 1 - t * t)));
 };
 
-// Centerline samples plus unit normals, so parallel threads can ride the same
-// curve offset sideways — a cord of many strands rather than one line.
-const sampleLemniscate = (tStart: number, tEnd: number, sampleCount: number) => {
-  const centers: Point[] = [];
-  for (let i = 0; i <= sampleCount; i++) {
-    centers.push(lemniscatePoint(lerp(tStart, tEnd, i / sampleCount)));
-  }
-  const normals: Point[] = centers.map((p, i) => {
-    const ahead = centers[Math.min(i + 1, centers.length - 1)];
-    const behind = centers[Math.max(i - 1, 0)];
-    const dx = ahead.x - behind.x;
-    const dy = ahead.y - behind.y;
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: -dy / len, y: dx / len };
-  });
-  return { centers, normals };
-};
-
-const LOBE_TRIM = 0.15;
-const LEFT_LOBE = sampleLemniscate(
-  Math.PI / 2 + LOBE_TRIM,
-  (3 * Math.PI) / 2 - LOBE_TRIM,
-  LOBE_SAMPLES,
-);
-const RIGHT_LOBE = sampleLemniscate(
-  -Math.PI / 2 + LOBE_TRIM,
-  Math.PI / 2 - LOBE_TRIM,
-  LOBE_SAMPLES,
-);
-// Shared friends sweep the whole figure-eight: left lobe then right lobe in
-// one continuous parameter run.
-const FULL_EIGHT = sampleLemniscate(
-  Math.PI / 2 + LOBE_TRIM,
-  (5 * Math.PI) / 2 - LOBE_TRIM,
-  LOBE_SAMPLES * 2,
-);
-
-const threadPathLine = line<Point>()
+const smoothPath = line<Point>()
   .x((p) => p.x)
   .y((p) => p.y)
-  .curve(curveCatmullRom.alpha(0.6));
+  .curve(curveCatmullRom.alpha(0.7));
 
-const appendTail = (
-  points: Point[],
-  phase: number,
-  offset: number,
-  seedText: string,
-): Point[] => {
-  const random = createSeededRandom(`${seedText}::tail`);
-  const braidAmplitude = 8 + Math.abs(offset) * 0.55;
-  const tailEnd = TAIL_BASE_END + random() * 55;
-  for (let i = 0; i <= TAIL_SAMPLES; i++) {
-    const t = i / TAIL_SAMPLES;
-    const y = lerp(KNOT_Y + 26, tailEnd, t);
-    const ramp = Math.min(1, (y - KNOT_Y) / 150);
-    const splay = Math.max(0, (t - 0.82) / 0.18) ** 2;
+const sampleQuadratic = (from: Point, control: Point, to: Point, samples = 22): Point[] => {
+  const points: Point[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    const u = 1 - t;
     points.push({
-      x:
-        KNOT_X +
-        offset * 0.35 +
-        braidAmplitude * ramp * Math.cos((2 * Math.PI * (y - KNOT_Y)) / 310 + phase) +
-        offset * 2.1 * splay,
+      x: u * u * from.x + 2 * u * t * control.x + t * t * to.x,
+      y: u * u * from.y + 2 * u * t * control.y + t * t * to.y,
+    });
+  }
+  return points;
+};
+
+// Real branches thin as they reach: three overlaid strokes of shrinking width
+// over a shrinking prefix of the same curve fake a tapered limb.
+const TaperedLimb = ({
+  samples,
+  baseWidth,
+  tipWidth,
+  color,
+  drawDelaySeconds,
+}: {
+  samples: Point[];
+  baseWidth: number;
+  tipWidth: number;
+  color: string;
+  drawDelaySeconds: number;
+}) => {
+  const segments = [
+    { points: samples, width: tipWidth },
+    { points: samples.slice(0, Math.ceil(samples.length * 0.62)), width: lerp(tipWidth, baseWidth, 0.55) },
+    { points: samples.slice(0, Math.ceil(samples.length * 0.34)), width: baseWidth },
+  ];
+  return (
+    <>
+      {segments.map((segment, index) => (
+        <path
+          key={index}
+          d={smoothPath(segment.points) ?? ''}
+          pathLength={1}
+          className="rvknot-limb"
+          style={{ animationDelay: `${drawDelaySeconds.toFixed(2)}s`, transition: REWEAVE_TRANSITION }}
+          fill="none"
+          stroke={color}
+          strokeWidth={segment.width}
+          strokeLinecap="round"
+        />
+      ))}
+    </>
+  );
+};
+
+type LeafSlot = {
+  person: TapestryPerson;
+  theta: number;
+  rx: number;
+  ry: number;
+  ring: number;
+  slotIndex: number;
+};
+
+const buildLeafSlots = (persons: TapestryPerson[]): LeafSlot[] => {
+  const ordered = orderPersonsForTapestry(persons);
+  const ringCount = ordered.length < 12 ? 1 : ordered.length < 26 ? 2 : ordered.length < 44 ? 3 : 4;
+  return ordered.map((person, slotIndex) => {
+    const random = createSeededRandom(`${person.id}::knot-leaf`);
+    const theta = lerp(SECTOR_START, SECTOR_END, (slotIndex + 0.5) / ordered.length);
+    // Neighbours in angle land on different rings, so the crown fills with
+    // depth instead of a single rim of leaves.
+    const ring = slotIndex % ringCount;
+    return {
+      person,
+      theta,
+      rx: RX_BASE + ring * RX_STEP + (random() - 0.5) * 16,
+      ry: RY_BASE + ring * RY_STEP + (random() - 0.5) * 22,
+      ring,
+      slotIndex,
+    };
+  });
+};
+
+const leafPointOf = (slot: LeafSlot): Point => ellipse(slot.theta, slot.rx, slot.ry);
+
+// One cord, end to end: braided down the trunk from under the crown, drawn in
+// tight through the binding, then falling away as a loose end.
+const founderCord = (sign: 1 | -1): Point[] => {
+  const points: Point[] = [];
+  // Starts above the highest bough, so every limb is seen leaving the cord.
+  const braidTop = CANOPY_Y - 116;
+  for (let i = 0; i <= 30; i++) {
+    const y = lerp(braidTop, BIND_TOP, i / 30);
+    points.push({
+      x: CANOPY_X + sign * TRUNK_BRAID_DX * Math.sin((Math.PI * (y - braidTop)) / 152),
+      y,
+    });
+  }
+  for (let i = 1; i <= 6; i++) {
+    points.push({ x: CANOPY_X + sign * 7, y: lerp(BIND_TOP, BIND_BOTTOM, i / 6) });
+  }
+  for (let i = 1; i <= 16; i++) {
+    const t = i / 16;
+    const y = lerp(BIND_BOTTOM, TAIL_END, t);
+    points.push({
+      x: CANOPY_X + sign * (10 + 52 * t * t) + sign * 6 * Math.sin((Math.PI * y) / 88),
       y,
     });
   }
   return points;
 };
-
-// The canopy outline: a quarter-turn past vertical, so the arc opens out from
-// the crown and closes back in below the knot.
-const arcDx = (y: number): number => {
-  const u = clamp01((y - ARC_TOP_Y) / (ARC_BOTTOM_Y - ARC_TOP_Y));
-  return ARC_DX_MAX * Math.sin(lerp(ARC_THETA_TOP, ARC_THETA_END, u));
-};
-
-const appendLobe = (
-  points: Point[],
-  lobe: { centers: Point[]; normals: Point[] },
-  offset: number,
-): Point[] => {
-  for (let i = 0; i < lobe.centers.length; i++) {
-    points.push({
-      x: lobe.centers[i].x + lobe.normals[i].x * offset,
-      y: lobe.centers[i].y + lobe.normals[i].y * offset,
-    });
-  }
-  return points;
-};
-
-// A bough: name at the tip → a branch that leaves almost level and then bends
-// in to meet the trunk at its own height → down the rail → around that side's
-// lobe → into the braided tail. The couple reuse this from the crown on a rail
-// of their own, inboard of everyone else's.
-const buildBoughThreadPath = (
-  column: 'left' | 'right',
-  seedText: string,
-  startY: number,
-  startDx: number,
-  joinY: number,
-  railDx: number,
-  offset: number,
-): string => {
-  const dir = column === 'left' ? -1 : 1;
-  const lobe = column === 'left' ? LEFT_LOBE : RIGHT_LOBE;
-
-  const points: Point[] = [{ x: KNOT_X + dir * startDx, y: startY }];
-  points.push({
-    x: KNOT_X + dir * lerp(railDx, startDx, 0.7),
-    y: lerp(joinY, startY, 0.74),
-  });
-  points.push({ x: KNOT_X + dir * railDx + offset, y: joinY });
-  points.push({ x: KNOT_X + dir * railDx * 0.6 + offset, y: KNOT_Y - 150 });
-  points.push({ x: KNOT_X + dir * railDx * 0.22 + offset * 0.6, y: KNOT_Y - 46 });
-  appendLobe(points, lobe, offset);
-  return threadPathLine(appendTail(points, column === 'left' ? 0 : Math.PI, offset, seedText)) ?? '';
-};
-
-// Shared-friend thread: it leaves from the END of its own name — the way a
-// bough thread leaves its tip — so nothing is ever ruled underneath the text.
-// From there it takes a lane of its own, wide enough to clear every name still
-// below it, down the heart of the trunk, then the whole figure-eight around
-// both lobes, then the core of the braid.
-const buildHeartThreadPath = (
-  seedText: string,
-  startY: number,
-  laneDir: number,
-  laneDx: number,
-  nameHalfWidth: number,
-  offset: number,
-): string => {
-  const laneX = KNOT_X + laneDir * laneDx;
-  const points: Point[] = [
-    { x: KNOT_X + laneDir * (nameHalfWidth + 7), y: startY + 1 },
-    { x: laneX, y: startY + 30 },
-    { x: laneX, y: lerp(startY + 30, KNOT_Y - 190, 0.86) },
-    { x: KNOT_X + laneDir * 40 + offset * 0.6, y: KNOT_Y - 116 },
-    { x: KNOT_X + offset * 0.9, y: KNOT_Y - 58 },
-  ];
-  appendLobe(points, FULL_EIGHT, offset);
-  return threadPathLine(appendTail(points, Math.PI / 2, offset * 0.6, seedText)) ?? '';
-};
-
-// Bough blocks centre on the arc's midpoint, so a side with few RSVPs reads as
-// a quieter cluster at the canopy's shoulder rather than a stubby list.
-const sideRowGap = (rowCount: number): number =>
-  rowCount <= 1 ? 0 : Math.min(MAX_ROW_GAP, (ARC_BOTTOM_Y - ARC_TOP_Y) / (rowCount - 1));
-
-const sideRowY = (rowIndex: number, rowCount: number): number => {
-  const gap = sideRowGap(rowCount);
-  return ARC_MID_Y - (gap * Math.max(rowCount - 1, 0)) / 2 + rowIndex * gap;
-};
-
-const centerRowGap = (rowCount: number): number =>
-  rowCount <= 1 ? 0 : Math.min(CENTER_MAX_GAP, (CENTER_BOTTOM - CENTER_TOP) / (rowCount - 1));
-
-const centerRowY = (rowIndex: number, rowCount: number): number =>
-  CENTER_TOP + rowIndex * centerRowGap(rowCount);
-
-const threadOffset = (rowIndex: number, rowCount: number, seedText: string): number => {
-  const rowT = rowCount <= 1 ? 0.5 : rowIndex / (rowCount - 1);
-  return (rowT - 0.5) * 2 * CORD_HALF_WIDTH + (createSeededRandom(`${seedText}::offset`)() - 0.5) * 5;
-};
-
-// Her people left, his right, shared friends the centre channel — the three
-// "who knows them" groups, families kept adjacent within each.
-const assignGroups = (persons: TapestryPerson[]): KnotThread[] => {
-  const families = groupIntoFamilies(persons);
-  const grouped: Record<KnotGroup, TapestryPerson[]> = { left: [], right: [], center: [] };
-  for (const family of families) {
-    const group: KnotGroup =
-      family.side === 'elizabeth' ? 'left' : family.side === 'ray' ? 'right' : 'center';
-    grouped[group].push(...family.members);
-  }
-  return (Object.keys(grouped) as KnotGroup[]).flatMap((group) =>
-    grouped[group].map((person, rowIndex) => ({
-      person,
-      group,
-      rowIndex,
-      rowCount: grouped[group].length,
-    })),
-  );
-};
-
-const FOUNDERS = [
-  { id: 'founder-elizabeth', name: 'Elizabeth', column: 'left' as const, color: '#cdd9e9' },
-  { id: 'founder-ray', name: 'Ray', column: 'right' as const, color: '#d9848f' },
-];
 
 const KnotTapestry = ({
   persons,
@@ -307,68 +204,140 @@ const KnotTapestry = ({
   persons: TapestryPerson[];
   entrance?: TapestryEntrance;
 }) => {
-  const threads = assignGroups(persons);
-  // Paint order varies which thread lies on top at each crossing (the weave),
-  // but it must be STABLE per person: sorting by anything count-dependent
-  // would reorder DOM nodes on every new arrival, and a moved node restarts
-  // its CSS draw-in animation.
-  const paintOrder = [...threads].sort(
-    (a, b) => hashStringToSeed(a.person.id) - hashStringToSeed(b.person.id),
-  );
-  // One type size across both boughs, set by whichever side is denser — two
-  // different sizes facing each other reads as a mistake.
-  const sideRows = Math.max(...threads.filter((t) => t.group !== 'center').map((t) => t.rowCount), 1);
-  const sideGap = sideRows <= 1 ? MAX_ROW_GAP : sideRowGap(sideRows);
-  const sideFontSize = Math.max(11.5, Math.min(16.5, sideGap * 0.62));
-  const sideChars = fitChars(SIDE_NAME_ROOM, sideFontSize);
-  const centerRows = Math.max(...threads.filter((t) => t.group === 'center').map((t) => t.rowCount), 1);
-  const centerGap = centerRows <= 1 ? CENTER_MAX_GAP : centerRowGap(centerRows);
-  const centerFontSize = Math.max(12, Math.min(16, centerGap * 0.52));
-  const centerChars = fitChars(CENTER_NAME_ROOM, centerFontSize);
+  const limbDelay = (staggeredSeconds: number) =>
+    entrance === 'staggered' ? staggeredSeconds : 0.1;
+  const slots = buildLeafSlots(persons);
+  const slotsById = new Map(slots.map((slot) => [slot.person.id, slot]));
 
-  // Each shared friend's lane only has to clear the widest name still beneath
-  // them, so the group's strands draw a chalice that narrows into the knot.
-  const centerRowsInOrder = threads
-    .filter((t) => t.group === 'center')
-    .sort((a, b) => a.rowIndex - b.rowIndex);
-  const centerLaneById = new Map<string, number>();
-  let widestBelow = 0;
-  for (let i = centerRowsInOrder.length - 1; i >= 0; i--) {
-    centerLaneById.set(
-      centerRowsInOrder[i].person.id,
-      Math.max(CENTER_LANE_MIN, Math.min(CENTER_LANE_MAX, widestBelow + 15)),
-    );
-    widestBelow = Math.max(
-      widestBelow,
-      halfNameWidth(truncateName(centerRowsInOrder[i].person.name, centerChars), centerFontSize),
-    );
+  // Names are dealt into bands down each side of the crown. The denser side
+  // sets the type size for both — two sizes facing each other reads as a
+  // mistake.
+  const sideCounts = { left: 0, right: 0 };
+  for (const slot of slots) {
+    if (Math.cos(slot.theta) < 0) sideCounts.left++;
+    else sideCounts.right++;
+  }
+  const bandGapFor = (count: number) =>
+    count <= 1 ? MAX_BAND_GAP : Math.min(MAX_BAND_GAP, (BAND_BOTTOM - BAND_TOP) / (count - 1));
+  const tightestGap = Math.min(
+    bandGapFor(Math.max(sideCounts.left, 1)),
+    bandGapFor(Math.max(sideCounts.right, 1)),
+  );
+  const nameFontSize = Math.max(13, Math.min(18, tightestGap * 0.62));
+
+  const labelByPersonId = new Map<
+    string,
+    { x: number; y: number; anchor: 'start' | 'end'; label: string }
+  >();
+  for (const side of ['left', 'right'] as const) {
+    const dir = side === 'left' ? -1 : 1;
+    // Ordered by the height of the leaf they belong to, so the stems fan out
+    // to the halo without ever crossing one another.
+    const sideSlots = slots
+      .filter((slot) => (Math.cos(slot.theta) < 0 ? 'left' : 'right') === side)
+      .sort((a, b) => leafPointOf(a).y - leafPointOf(b).y);
+    const gap = bandGapFor(sideSlots.length);
+    const blockTop = BAND_MID - (gap * Math.max(sideSlots.length - 1, 0)) / 2;
+    sideSlots.forEach((slot, index) => {
+      const y = blockTop + index * gap;
+      const x = CANOPY_X + dir * (haloRx(y) + HALO_PAD);
+      const room = dir < 0 ? x - EDGE_MARGIN : VIEW_W - EDGE_MARGIN - x;
+      labelByPersonId.set(slot.person.id, {
+        x,
+        y,
+        anchor: dir < 0 ? 'end' : 'start',
+        label: truncateName(
+          slot.person.name,
+          Math.max(6, Math.floor(room / (nameFontSize * CHAR_WIDTH_RATIO))),
+        ),
+      });
+    });
   }
 
+  const families = groupIntoFamilies(persons).map((family) => {
+    const memberSlots = family.members
+      .map((member) => slotsById.get(member.id))
+      .filter((slot): slot is LeafSlot => Boolean(slot));
+    const meanTheta =
+      memberSlots.reduce((sum, slot) => sum + slot.theta, 0) / Math.max(memberSlots.length, 1);
+    const random = createSeededRandom(`${family.familyKey}::knot-family`);
+    return {
+      ...family,
+      memberSlots,
+      meanTheta,
+      anchor: ellipse(
+        meanTheta + (random() - 0.5) * 0.06,
+        RX_BASE - 56 + (random() - 0.5) * 22,
+        RY_BASE - 68 + (random() - 0.5) * 26,
+      ),
+    };
+  });
+
+  // Neighbouring families share a bough, so the canopy branches like a real
+  // crown instead of a hub of spokes.
+  const boughCount = Math.min(8, Math.max(3, Math.round(families.length / 4)));
+  const familiesPerBough = Math.ceil(families.length / Math.max(boughCount, 1));
+  const boughs = Array.from({ length: boughCount }, (_, boughIndex) => {
+    const boughFamilies = families.slice(
+      boughIndex * familiesPerBough,
+      (boughIndex + 1) * familiesPerBough,
+    );
+    const meanTheta =
+      boughFamilies.reduce((sum, family) => sum + family.meanTheta, 0) /
+      Math.max(boughFamilies.length, 1);
+    const random = createSeededRandom(`bough-${boughIndex}::knot`);
+    // A bough leaves the trunk at its own height rather than from a shared
+    // hub: the ones reaching sideways start low, the ones reaching for the sky
+    // start high. That is the difference between a tree and a fountain.
+    const sideways = Math.abs(Math.cos(meanTheta));
+    const origin = {
+      x: CANOPY_X + (random() - 0.5) * 16,
+      y: CANOPY_Y - 96 + sideways * 210 + (random() - 0.5) * 30,
+    };
+    return {
+      boughFamilies,
+      origin,
+      tip: ellipse(meanTheta, 84 + (random() - 0.5) * 26, 112 + (random() - 0.5) * 30),
+      control: {
+        x: lerp(origin.x, ellipse(meanTheta, 84, 112).x, 0.45) + (random() - 0.5) * 44,
+        y: lerp(origin.y, ellipse(meanTheta, 84, 112).y, 0.55),
+      },
+    };
+  }).filter((bough) => bough.boughFamilies.length > 0);
+
   return (
-    <div className="rvknot-root relative mx-auto w-full max-w-6xl select-none" aria-label="Handfasting knot of confirmed guests">
+    <div className="relative mx-auto w-full max-w-3xl select-none" aria-label="Handfasting knot of confirmed guests">
       <style>{`
-        .rvknot-thread {
+        .rvknot-limb {
           stroke-dasharray: 1;
           stroke-dashoffset: 1;
-          animation: rvknotDraw 3s cubic-bezier(0.4, 0, 0.25, 1) forwards;
+          animation: rvknotDraw 2.4s cubic-bezier(0.4, 0, 0.3, 1) forwards;
         }
-        .rvknot-name {
+        .rvknot-leaf {
           opacity: 0;
-          animation: rvknotFade 1.4s ease forwards;
+          animation: rvknotFade 1.3s ease forwards;
+        }
+        .rvknot-canopy {
+          transform-origin: ${CANOPY_X}px ${CANOPY_Y}px;
+          animation: rvknotSway 10s ease-in-out infinite alternate;
         }
         @keyframes rvknotDraw { to { stroke-dashoffset: 0; } }
         @keyframes rvknotFade { to { opacity: 1; } }
+        @keyframes rvknotSway {
+          from { transform: rotate(-0.3deg); }
+          to { transform: rotate(0.3deg); }
+        }
         @media (prefers-reduced-motion: reduce) {
-          .rvknot-thread { animation: none; stroke-dashoffset: 0; transition: none !important; }
-          .rvknot-name { animation: none; opacity: 1; transition: none !important; }
+          .rvknot-limb { animation: none; stroke-dashoffset: 0; transition: none !important; }
+          .rvknot-leaf { animation: none; opacity: 1; transition: none !important; }
+          .rvknot-canopy { animation: none; }
         }
       `}</style>
-      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="h-auto w-full" role="img">
+      <svg viewBox={VIEW_BOX} className="h-auto w-full" role="img">
         <defs>
-          <radialGradient id="rvknot-heart-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#f1ece0" stopOpacity="0.12" />
-            <stop offset="55%" stopColor="#f1ece0" stopOpacity="0.045" />
-            <stop offset="100%" stopColor="#f1ece0" stopOpacity="0" />
+          <radialGradient id="rvknot-ground-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#d9b26a" stopOpacity="0.13" />
+            <stop offset="100%" stopColor="#d9b26a" stopOpacity="0" />
           </radialGradient>
           <filter id="rvknot-soft-glow" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -378,151 +347,231 @@ const KnotTapestry = ({
             </feMerge>
           </filter>
         </defs>
-        <circle cx={KNOT_X} cy={KNOT_Y} r={330} fill="url(#rvknot-heart-glow)" />
-        {paintOrder.map((thread, paintIndex) => {
-          const isCenter = thread.group === 'center';
-          const offset = threadOffset(thread.rowIndex, thread.rowCount, thread.person.id);
-          const startY = isCenter
-            ? centerRowY(thread.rowIndex, thread.rowCount)
-            : sideRowY(thread.rowIndex, thread.rowCount);
-          const startDx = arcDx(startY);
-          const label = truncateName(thread.person.name, isCenter ? centerChars : sideChars);
-          const path = isCenter
-            ? buildHeartThreadPath(
-                thread.person.id,
-                startY,
-                thread.rowIndex % 2 === 0 ? -1 : 1,
-                centerLaneById.get(thread.person.id) ?? CENTER_LANE_MAX,
-                halfNameWidth(label, centerFontSize),
-                offset,
-              )
-            : buildBoughThreadPath(
-                thread.group as 'left' | 'right',
-                thread.person.id,
-                startY,
-                startDx,
-                lerp(
-                  TRUNK_JOIN_TOP,
-                  TRUNK_JOIN_BOTTOM,
-                  clamp01((startY - ARC_TOP_Y) / (ARC_BOTTOM_Y - ARC_TOP_Y)),
-                ),
-                BOUGH_RAIL_DX + createSeededRandom(`${thread.person.id}::rail`)() * 16,
-                offset,
-              );
-          const color = pickThreadColor(thread.person.side, thread.person.id);
-          const delay = `${(entrance === 'staggered' ? 0.25 + paintIndex * 0.035 : 0.12).toFixed(2)}s`;
-          const fontSize = isCenter ? centerFontSize : sideFontSize;
-          const dir = thread.group === 'left' ? -1 : 1;
-          const nameTransform = isCenter
-            ? `translate(${KNOT_X} ${startY + fontSize * 0.34})`
-            : `translate(${KNOT_X + dir * (startDx + NAME_GAP)} ${startY + fontSize * 0.34})`;
+        <ellipse cx={CANOPY_X} cy={BIND_BOTTOM} rx={280} ry={140} fill="url(#rvknot-ground-glow)" />
+
+        {/* The two of us: cords braided the length of the trunk, bound at the
+            foot, ends falling. Tied before the first RSVP — the tree stands
+            even when nobody has answered yet. */}
+        {([
+          { sign: -1 as const, color: ELIZABETH_INK },
+          { sign: 1 as const, color: RAY_INK },
+        ]).map((cord) => (
+          <g key={cord.sign}>
+            <path
+              d={smoothPath(founderCord(cord.sign)) ?? ''}
+              pathLength={1}
+              className="rvknot-limb"
+              style={{ animationDelay: '0s' }}
+              fill="none"
+              stroke={PAGE_BLACK}
+              strokeWidth={19}
+              strokeLinecap="round"
+            />
+            <path
+              d={smoothPath(founderCord(cord.sign)) ?? ''}
+              pathLength={1}
+              className="rvknot-limb"
+              style={{ animationDelay: '0s' }}
+              fill="none"
+              stroke={cord.color}
+              strokeWidth={10}
+              strokeOpacity={0.97}
+              strokeLinecap="round"
+              filter="url(#rvknot-soft-glow)"
+            />
+          </g>
+        ))}
+
+        {/* The binding: a few tight wraps holding both cords together. */}
+        {[0, 1, 2, 3].map((wrap) => {
+          const y = lerp(BIND_TOP + 9, BIND_BOTTOM - 9, wrap / 3);
+          const bow = wrap % 2 === 0 ? -7 : 7;
           return (
-            <g key={thread.person.id}>
-              <path
-                d={path}
-                pathLength={1}
-                className="rvknot-thread"
-                style={{ animationDelay: delay, transition: REWEAVE_TRANSITION }}
-                fill="none"
-                stroke={PAGE_BLACK}
-                strokeWidth={5.4}
-                strokeLinecap="round"
-              />
-              <path
-                d={path}
-                pathLength={1}
-                className="rvknot-thread"
-                style={{ animationDelay: delay, transition: REWEAVE_TRANSITION }}
-                fill="none"
-                stroke={color}
-                strokeWidth={isCenter ? 2.3 : 2.05}
-                strokeOpacity={0.92}
-                strokeLinecap="round"
-              />
-              <text
-                transform={nameTransform}
-                textAnchor={isCenter ? 'middle' : thread.group === 'left' ? 'end' : 'start'}
-                className={`${playfair.className} rvknot-name`}
-                style={{
-                  animationDelay: delay,
-                  transition: 'transform 900ms ease, font-size 900ms ease',
-                }}
-                fontSize={fontSize}
-                fill={color}
-                opacity={0.95}
-              >
-                {thread.person.hovertext ? <title>{thread.person.hovertext}</title> : null}
-                {label}
-              </text>
-            </g>
+            <path
+              key={wrap}
+              d={
+                smoothPath([
+                  { x: CANOPY_X - 27, y: y + 5 },
+                  { x: CANOPY_X, y: y + bow },
+                  { x: CANOPY_X + 27, y: y + 5 },
+                ]) ?? ''
+              }
+              pathLength={1}
+              className="rvknot-limb"
+              style={{ animationDelay: '0.15s' }}
+              fill="none"
+              stroke={CORD_BIND}
+              strokeWidth={5.5}
+              strokeOpacity={0.92}
+              strokeLinecap="round"
+            />
           );
         })}
-        {/* The couple: heavier founding threads that tie the knot even before
-            the first RSVP. They stand together at the crown with the friends
-            they share gathered just beneath. Painted last, atop the cord. */}
-        {FOUNDERS.map((founder) => {
-          const dir = founder.column === 'left' ? -1 : 1;
-          const path = buildBoughThreadPath(
-            founder.column,
-            founder.id,
-            FOUNDER_Y + 32,
-            FOUNDER_START_DX,
-            TRUNK_JOIN_TOP - 40,
-            FOUNDER_RAIL_DX,
-            0,
-          );
-          return (
-            <g key={founder.id}>
-              <path
-                d={path}
-                pathLength={1}
-                className="rvknot-thread"
-                style={{ animationDelay: '0s' }}
-                fill="none"
-                stroke={PAGE_BLACK}
-                strokeWidth={6.4}
-                strokeLinecap="round"
+
+        <g className="rvknot-canopy">
+          {boughs.map((bough, boughIndex) => (
+            <g key={boughIndex}>
+              <TaperedLimb
+                samples={sampleQuadratic(bough.origin, bough.control, bough.tip)}
+                baseWidth={13}
+                tipWidth={5.5}
+                color={BARK}
+                drawDelaySeconds={limbDelay(0.45)}
               />
-              <path
-                d={path}
-                pathLength={1}
-                className="rvknot-thread"
-                style={{ animationDelay: '0s' }}
-                fill="none"
-                stroke={founder.color}
-                strokeWidth={3.3}
-                strokeOpacity={0.98}
-                strokeLinecap="round"
-                filter="url(#rvknot-soft-glow)"
-              />
-              <text
-                transform={`translate(${KNOT_X + dir * FOUNDER_NAME_GAP} ${FOUNDER_Y})`}
-                textAnchor={founder.column === 'left' ? 'end' : 'start'}
-                className={`${playfair.className} rvknot-name`}
-                style={{ animationDelay: '0.2s' }}
-                fontSize={28}
-                fontStyle="italic"
-                fill={founder.color}
-                filter="url(#rvknot-soft-glow)"
-              >
-                {founder.name}
-              </text>
+              {bough.boughFamilies.map((family) => {
+                const twigRandom = createSeededRandom(`${family.familyKey}::knot-twig`);
+                const twigControl = {
+                  x: lerp(bough.tip.x, family.anchor.x, 0.5) + (twigRandom() - 0.5) * 46,
+                  y: lerp(bough.tip.y, family.anchor.y, 0.5) + (twigRandom() - 0.5) * 46,
+                };
+                return (
+                  <g key={family.familyKey}>
+                    <TaperedLimb
+                      samples={sampleQuadratic(bough.tip, twigControl, family.anchor, 16)}
+                      baseWidth={5}
+                      tipWidth={2.2}
+                      color={BARK}
+                      drawDelaySeconds={limbDelay(0.95)}
+                    />
+                    {family.memberSlots.map((slot) => {
+                      const leaf = leafPointOf(slot);
+                      const placement = labelByPersonId.get(slot.person.id);
+                      const stemRandom = createSeededRandom(`${slot.person.id}::knot-stem`);
+                      const stemControl = {
+                        x: lerp(family.anchor.x, leaf.x, 0.5) + (stemRandom() - 0.5) * 34,
+                        y: lerp(family.anchor.y, leaf.y, 0.5) + (stemRandom() - 0.5) * 34,
+                      };
+                      const color = pickThreadColor(slot.person.side, slot.person.id);
+                      const fadeDelay = `${(entrance === 'staggered'
+                        ? 1.25 + slot.slotIndex * 0.016
+                        : 0.35
+                      ).toFixed(2)}s`;
+                      const thetaDeg = (slot.theta * 180) / Math.PI;
+                      return (
+                        <g key={slot.person.id}>
+                          <path
+                            d={smoothPath(sampleQuadratic(family.anchor, stemControl, leaf, 14)) ?? ''}
+                            pathLength={1}
+                            className="rvknot-limb"
+                            style={{ animationDelay: `${limbDelay(1.15)}s`, transition: REWEAVE_TRANSITION }}
+                            fill="none"
+                            stroke={BARK}
+                            strokeWidth={1.4}
+                            strokeOpacity={0.8}
+                            strokeLinecap="round"
+                          />
+                          {/* A hair of a stem out to the halo, so a name on the
+                              rim still reads as belonging to its leaf. */}
+                          {placement && (
+                            <path
+                              d={
+                                smoothPath([
+                                  leaf,
+                                  {
+                                    x: lerp(leaf.x, placement.x, 0.55),
+                                    y: lerp(leaf.y, placement.y, 0.72),
+                                  },
+                                  {
+                                    x: placement.anchor === 'end' ? placement.x + 5 : placement.x - 5,
+                                    y: placement.y,
+                                  },
+                                ]) ?? ''
+                              }
+                              pathLength={1}
+                              className="rvknot-limb"
+                              style={{ animationDelay: `${limbDelay(1.15)}s`, transition: REWEAVE_TRANSITION }}
+                              fill="none"
+                              stroke={color}
+                              strokeWidth={0.85}
+                              strokeOpacity={0.34}
+                              strokeLinecap="round"
+                            />
+                          )}
+                          <ellipse
+                            rx={7.5}
+                            ry={3.4}
+                            transform={`translate(${leaf.x} ${leaf.y}) rotate(${thetaDeg + 38})`}
+                            fill={color}
+                            className="rvknot-leaf"
+                            style={{ animationDelay: fadeDelay, transition: 'transform 900ms ease' }}
+                            opacity={0.95}
+                          />
+                          {placement && (
+                            <text
+                              x={placement.x}
+                              y={placement.y}
+                              textAnchor={placement.anchor}
+                              dominantBaseline="middle"
+                              className={`${playfair.className} rvknot-leaf`}
+                              style={{
+                                animationDelay: fadeDelay,
+                                transition: 'x 900ms ease, y 900ms ease, font-size 900ms ease',
+                              }}
+                              fontSize={nameFontSize}
+                              fill={color}
+                            >
+                              {slot.person.hovertext ? <title>{slot.person.hovertext}</title> : null}
+                              {placement.label}
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
             </g>
-          );
-        })}
-        {/* The ampersand belongs at the crown between them, not in the knot —
-            the crossing of the cord already says it down there. */}
+          ))}
+        </g>
+
         <text
-          x={KNOT_X}
-          y={FOUNDER_Y - 1}
+          x={CANOPY_X - 96}
+          y={TAIL_END + 66}
+          textAnchor="end"
+          className={playfair.className}
+          fontSize={27}
+          fontStyle="italic"
+          fill={ELIZABETH_INK}
+          filter="url(#rvknot-soft-glow)"
+        >
+          Elizabeth
+        </text>
+        <text
+          x={CANOPY_X}
+          y={TAIL_END + 66}
           textAnchor="middle"
           className={playfair.className}
-          fontSize={20}
+          fontSize={22}
           fontStyle="italic"
-          fill={NAME_INK}
-          opacity={0.7}
+          fill="#cbc4b3"
+          opacity={0.85}
         >
           &amp;
+        </text>
+        <text
+          x={CANOPY_X + 96}
+          y={TAIL_END + 66}
+          textAnchor="start"
+          className={playfair.className}
+          fontSize={27}
+          fontStyle="italic"
+          fill={RAY_INK}
+          filter="url(#rvknot-soft-glow)"
+        >
+          Ray
+        </text>
+        <text
+          x={CANOPY_X}
+          y={TAIL_END + 110}
+          textAnchor="middle"
+          className={cormorant.className}
+          fontSize={17}
+          fontStyle="italic"
+          letterSpacing="0.14em"
+          fill="#cbc4b3"
+          opacity={0.8}
+        >
+          and everyone growing with us
         </text>
       </svg>
     </div>

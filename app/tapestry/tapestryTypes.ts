@@ -16,7 +16,11 @@ export type TapestryPerson = {
   hovertext?: string | null;
 };
 
-export type TapestryVariant = 'tree' | 'knot' | 'wreath';
+// 'tree2' is a second pass at the tree — horizontal names on a knot-style
+// braided trunk. 'tree3' is the original tree with nothing changed but its
+// labels, which lie flat instead of radiating. Both are kept alongside the
+// original so they can be compared at /preview.
+export type TapestryVariant = 'tree' | 'tree2' | 'tree3' | 'knot' | 'wreath';
 
 // 'staggered' cascades every strand on mount (a full page load); 'single'
 // gives each strand the same short delay, so an arrival added to an
