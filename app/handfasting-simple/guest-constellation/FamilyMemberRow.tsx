@@ -1,15 +1,17 @@
 'use client';
 
-import type { FamilyMemberDraft } from './partyRegistrationTypes';
+import type { FamilyMemberDraft, MenuOptionPreview } from './partyRegistrationTypes';
 import CelestialCheckbox from './CelestialCheckbox';
-import DietCheckboxPair from './DietCheckboxPair';
+import DietChoiceTrio from './DietChoiceTrio';
 
 const FamilyMemberRow = ({
   draft,
+  menuOptions,
   onPatch,
   onDiscard,
 }: {
   draft: FamilyMemberDraft;
+  menuOptions: MenuOptionPreview[];
   onPatch: (patch: Partial<Omit<FamilyMemberDraft, 'draftKey'>>) => void;
   onDiscard: () => void;
 }) => (
@@ -32,7 +34,7 @@ const FamilyMemberRow = ({
         ×
       </button>
     </div>
-    <DietCheckboxPair vegan={draft.vegan} vegetarian={draft.vegetarian} onDietChange={onPatch} />
+    <DietChoiceTrio diet={draft.diet} menuOptions={menuOptions} onDietChange={(diet) => onPatch({ diet })} />
     <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
       <CelestialCheckbox checked={draft.isChildUnder2} onChange={(checked) => onPatch({ isChildUnder2: checked })}>
         Child under 2

@@ -1,16 +1,9 @@
-import type { Diet } from '@prisma/client';
 import type { FamilyMemberDraft } from './partyRegistrationTypes';
-
-// Vegan wins if state ever holds both; the checkbox pair keeps them exclusive anyway.
-
-export const deriveDietFromCheckboxes = (vegan: boolean, vegetarian: boolean): Diet =>
-  vegan ? 'vegan' : vegetarian ? 'vegetarian' : 'omnivore';
 
 export const mintEmptyFamilyMemberDraft = (): FamilyMemberDraft => ({
   draftKey: crypto.randomUUID(),
   name: '',
-  vegan: false,
-  vegetarian: false,
+  diet: 'omnivore',
   isChildUnder2: false,
   needsHighChair: false,
 });

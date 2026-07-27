@@ -21,8 +21,15 @@ export type PartyRegistrationPayload = {
 export type FamilyMemberDraft = {
   draftKey: string;
   name: string;
-  vegan: boolean;
-  vegetarian: boolean;
+  diet: Diet;
   isChildUnder2: boolean;
   needsHighChair: boolean;
+};
+
+// One dish from /api/handfasting-simple/menu-options, shown when a guest
+// hovers a diet choice on the RSVP form.
+export type MenuOptionPreview = {
+  name: string;
+  description: string;
+  diet: Diet;
 };

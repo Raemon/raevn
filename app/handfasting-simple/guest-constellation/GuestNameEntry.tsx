@@ -4,8 +4,9 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { cormorant } from '../save-the-date/handfastingInvitationTypography';
 import type { PartyRegistrationPayload } from './partyRegistrationTypes';
 import { usePartyRegistrationDraft } from './usePartyRegistrationDraft';
+import { useMenuOptionPreviews } from './useMenuOptionPreviews';
 import { MAX_FAMILY_MEMBERS } from './partyLimits';
-import DietCheckboxPair from './DietCheckboxPair';
+import DietChoiceTrio from './DietChoiceTrio';
 import FamilyMemberRow from './FamilyMemberRow';
 
 const invitationH3ClassName = `${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#cbc4b3]`;
@@ -28,6 +29,7 @@ const GuestNameEntry = ({
   const dialogueRootRef = useRef<HTMLDivElement>(null);
   const guestNameInputRef = useRef<HTMLInputElement>(null);
   const partyDraft = usePartyRegistrationDraft(inviteToken);
+  const menuOptions = useMenuOptionPreviews();
   const hasTypedName = typedGuestNameDraft.trim() !== '';
   useEffect(() => {
     if (!isRsvpExpanded) return;
@@ -125,15 +127,16 @@ const GuestNameEntry = ({
                 hasTypedName ? 'max-h-[100rem] opacity-100' : 'pointer-events-none max-h-0 opacity-0'
               }`}
             >
-              <DietCheckboxPair
-                vegan={partyDraft.primaryDiet.vegan}
-                vegetarian={partyDraft.primaryDiet.vegetarian}
+              <DietChoiceTrio
+                diet={partyDraft.primaryDiet}
+                menuOptions={menuOptions}
                 onDietChange={partyDraft.setPrimaryDiet}
               />
               {partyDraft.familyDrafts.map((familyDraft) => (
                 <FamilyMemberRow
                   key={familyDraft.draftKey}
                   draft={familyDraft}
+                  menuOptions={menuOptions}
                   onPatch={(patch) => partyDraft.patchFamilyDraft(familyDraft.draftKey, patch)}
                   onDiscard={() => partyDraft.discardFamilyDraft(familyDraft.draftKey)}
                 />
