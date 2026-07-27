@@ -33,6 +33,8 @@ export async function POST(request: Request) {
         name: payload.name,
         diet: payload.diet,
         rsvp: payload.rsvp,
+        // The note is the primary registrant's alone; family rows stay bare.
+        note: payload.note ?? null,
         inviteeId: invitee?.id ?? null,
         meaningful: false,
         plusOne: '',

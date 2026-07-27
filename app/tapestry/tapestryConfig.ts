@@ -10,5 +10,6 @@ export const isTapestryVariant = (value: string | null | undefined): value is Ta
   value === 'tree' ||
   value === 'tree2' ||
   value === 'tree3' ||
+  value === 'tree4' ||
   value === 'knot' ||
   value === 'wreath';

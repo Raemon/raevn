@@ -1,5 +1,6 @@
 import {
   HANDFASTING_EVENT_DETAILS,
+  HANDFASTING_EVENT_LOCATION,
   HANDFASTING_EVENT_TITLE,
 } from './handfastingSaveTheDateBrief';
 
@@ -12,4 +13,5 @@ export const weaveGoogleCalendarHandoffHref = (): string =>
     'dates=20261024T230000Z/20261025T020000Z',
     'ctz=America/Los_Angeles',
     `details=${encodeURIComponent(HANDFASTING_EVENT_DETAILS)}`,
+    `location=${encodeURIComponent(HANDFASTING_EVENT_LOCATION)}`,
   ].join('&');

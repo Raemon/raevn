@@ -36,7 +36,7 @@ const CalendarOutboundShortcutCue = ({
 // Mirrors the tactile row guests scan while pinning October into living memory.
 
 const CalendarShortcutRibbon = () => (
-  <div className="mt-[1.8rem] flex flex-wrap justify-center gap-[0.55rem]">
+  <div className="mt-[0.9rem] flex flex-wrap justify-center gap-[0.55rem]">
     {HANDFASTING_CALENDAR_SHORTCUT_BLUEPRINT_MATRIX.map((outboundShortcutBlueprintBrief, ribbonSlotIndex) => (
       <CalendarOutboundShortcutCue
         key={outboundShortcutBlueprintBrief.vendorLabelToken}

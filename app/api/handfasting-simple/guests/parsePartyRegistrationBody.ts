@@ -1,6 +1,10 @@
 import type { Diet } from '@prisma/client';
 import type { PartyRegistrationPayload } from '@/app/handfasting-simple/guest-constellation/partyRegistrationTypes';
-import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH } from '@/app/handfasting-simple/guest-constellation/partyLimits';
+import {
+  MAX_FAMILY_MEMBERS,
+  MAX_GUEST_NAME_LENGTH,
+  MAX_GUEST_NOTE_LENGTH,
+} from '@/app/handfasting-simple/guest-constellation/partyLimits';
 
 const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan']);
 
@@ -9,6 +13,9 @@ const sanitizeName = (candidate: unknown): string =>
 
 const sanitizeDiet = (candidate: unknown): Diet =>
   typeof candidate === 'string' && DIET_ALLOWLIST.has(candidate) ? (candidate as Diet) : 'omnivore';
+
+const sanitizeNote = (candidate: unknown): string =>
+  typeof candidate === 'string' ? candidate.trim().slice(0, MAX_GUEST_NOTE_LENGTH) : '';
 
 // null = undecided; anything that isn't literally true/false stays undecided.
 const sanitizeRsvp = (candidate: unknown): boolean | null =>
@@ -21,11 +28,13 @@ export const parsePartyRegistrationBody = (body: unknown): PartyRegistrationPayl
     name?: unknown;
     diet?: unknown;
     rsvp?: unknown;
+    note?: unknown;
     inviteToken?: unknown;
     family?: unknown;
   } | null;
   const name = sanitizeName(record?.name);
   if (!name) return null;
+  const note = sanitizeNote(record?.note);
   const rawFamily = Array.isArray(record?.family) ? record.family : [];
   const family = rawFamily
     .slice(0, MAX_FAMILY_MEMBERS)
@@ -48,6 +57,7 @@ export const parsePartyRegistrationBody = (body: unknown): PartyRegistrationPayl
     name,
     diet: sanitizeDiet(record?.diet),
     rsvp: sanitizeRsvp(record?.rsvp),
+    ...(note !== '' ? { note } : {}),
     ...(typeof record?.inviteToken === 'string' && record.inviteToken !== ''
       ? { inviteToken: record.inviteToken }
       : {}),

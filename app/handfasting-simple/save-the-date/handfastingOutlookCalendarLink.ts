@@ -1,5 +1,6 @@
 import {
   HANDFASTING_EVENT_DETAILS,
+  HANDFASTING_EVENT_LOCATION,
   HANDFASTING_EVENT_TITLE,
 } from './handfastingSaveTheDateBrief';
 
@@ -12,4 +13,5 @@ export const weaveOutlookComposerHandoffHref = (): string =>
     'startdt=2026-10-24T16:00:00-07:00',
     'enddt=2026-10-24T19:00:00-07:00',
     `body=${encodeURIComponent(HANDFASTING_EVENT_DETAILS)}`,
+    `location=${encodeURIComponent(HANDFASTING_EVENT_LOCATION)}`,
   ].join('&');

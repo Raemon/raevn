@@ -1,3 +1,4 @@
+import CalendarShortcutRibbon from './CalendarShortcutRibbon';
 import { cinzel, cormorant, playfair } from './handfastingInvitationTypography';
 
 // Stacks the lyrical beats loved ones skim before reacting or RSVPing softly.
@@ -21,6 +22,9 @@ const SaveTheDateHeroAnnouncement = () => (
     >
       4:00 pm, Oakland, CA
     </p>
+    {/* The vendor row belongs to the time-and-place line, not floating between
+        sections — it is the thing you reach for right after reading the when. */}
+    <CalendarShortcutRibbon />
   </div>
 );
 

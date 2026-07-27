@@ -7,7 +7,6 @@ import { guestsToTapestryPersons } from '../tapestry/personAdapters';
 import { LIVE_TAPESTRY_VARIANT, isTapestryVariant } from '../tapestry/tapestryConfig';
 import type { TapestryVariant } from '../tapestry/tapestryTypes';
 import { useGuestConstellation } from './guest-constellation/useGuestConstellation';
-import CalendarShortcutRibbon from './save-the-date/CalendarShortcutRibbon';
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
 import { cormorant, playfair } from './save-the-date/handfastingInvitationTypography';
 
@@ -100,7 +99,10 @@ const Handfasting2 = ({
             </p>
           </div>
         )}
-        <div className="flex flex-col items-center">
+        {/* The letter opens a `mt-12` below the title block; the RSVP buttons
+            close the same distance below the signature so the letter sits
+            evenly framed rather than crowding what follows it. */}
+        <div className={`flex flex-col items-center ${personalization ? 'mt-12' : ''}`}>
           <GuestNameEntry
             persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
             className={`${cormorant.className}`}
@@ -109,7 +111,6 @@ const Handfasting2 = ({
           />
         </div>
         <SaveTheDateHeroAnnouncement />
-          <CalendarShortcutRibbon />
           <div className="mt-[2.75rem] mb-40 flex w-full flex-col items-center px-2">
             {tapestrySection ?? (
               <GuestTapestry

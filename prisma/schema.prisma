@@ -20,6 +20,7 @@ model Guest {
   meaningful     Boolean
   plusOne        String
   rsvp           Boolean? // null = undecided; only rsvp=true guests appear in the constellation
+  note           String? // optional message the guest left when RSVPing, either way
   isChildUnder2  Boolean  @default(false)
   needsHighChair Boolean  @default(false)
   registeredById String? // set on family rows: the primary registrant who added them

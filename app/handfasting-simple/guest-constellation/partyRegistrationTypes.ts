@@ -13,6 +13,9 @@ export type PartyRegistrationPayload = {
   name: string;
   diet: Diet;
   rsvp: boolean | null;
+  // Free-text message for the hosts, offered on both the accept and decline
+  // paths; omitted entirely when the guest left it blank.
+  note?: string;
   inviteToken?: string;
   family: PartyMemberSubmission[];
 };

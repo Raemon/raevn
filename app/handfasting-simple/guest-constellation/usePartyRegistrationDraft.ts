@@ -8,7 +8,7 @@ import {
   mintEmptyFamilyMemberDraft,
   patchFamilyMemberDraft,
 } from './familyMemberDraftHelpers';
-import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH } from './partyLimits';
+import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH, MAX_GUEST_NOTE_LENGTH } from './partyLimits';
 
 // Holds everything the registration panel edits besides the name itself, and
 // assembles the wire payload with the same trim/drop-empties rules the server applies.
@@ -16,6 +16,7 @@ import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH } from './partyLimits';
 export const usePartyRegistrationDraft = (inviteToken?: string) => {
   const [primaryDiet, setPrimaryDiet] = useState<Diet>('omnivore');
   const [familyDrafts, setFamilyDrafts] = useState<FamilyMemberDraft[]>([]);
+  const [noteDraft, setNoteDraft] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const appendFamilyDraft = (): void =>
@@ -27,25 +28,36 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
   const discardFamilyDraft = (draftKey: string): void =>
     setFamilyDrafts((drafts) => discardFamilyMemberDraft(drafts, draftKey));
 
-  const assemblePartyPayload = (enteredNameTrimmed: string): PartyRegistrationPayload => ({
-    name: enteredNameTrimmed.slice(0, MAX_GUEST_NAME_LENGTH),
-    diet: primaryDiet,
-    // Registering means attending; the form no longer asks.
-    rsvp: true,
-    ...(inviteToken ? { inviteToken } : {}),
-    family: familyDrafts
-      .map((draft) => ({
-        name: draft.name.trim().slice(0, MAX_GUEST_NAME_LENGTH),
-        diet: draft.diet,
-        isChildUnder2: draft.isChildUnder2,
-        needsHighChair: draft.needsHighChair,
-      }))
-      .filter((member) => member.name !== ''),
-  });
+  // `isAttending` comes from which of the two RSVP buttons opened the panel.
+  const assemblePartyPayload = (
+    enteredNameTrimmed: string,
+    isAttending: boolean,
+  ): PartyRegistrationPayload => {
+    const trimmedNote = noteDraft.trim().slice(0, MAX_GUEST_NOTE_LENGTH);
+    return {
+      name: enteredNameTrimmed.slice(0, MAX_GUEST_NAME_LENGTH),
+      diet: primaryDiet,
+      rsvp: isAttending,
+      ...(trimmedNote !== '' ? { note: trimmedNote } : {}),
+      ...(inviteToken ? { inviteToken } : {}),
+      // A decline brings nobody along, whatever the diet/family panel held.
+      family: isAttending
+        ? familyDrafts
+            .map((draft) => ({
+              name: draft.name.trim().slice(0, MAX_GUEST_NAME_LENGTH),
+              diet: draft.diet,
+              isChildUnder2: draft.isChildUnder2,
+              needsHighChair: draft.needsHighChair,
+            }))
+            .filter((member) => member.name !== '')
+        : [],
+    };
+  };
 
   const resetPartyDraft = (): void => {
     setPrimaryDiet('omnivore');
     setFamilyDrafts([]);
+    setNoteDraft('');
   };
 
   return {
@@ -55,6 +67,8 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
     appendFamilyDraft,
     patchFamilyDraft,
     discardFamilyDraft,
+    noteDraft,
+    setNoteDraft,
     isSubmitting,
     setIsSubmitting,
     assemblePartyPayload,

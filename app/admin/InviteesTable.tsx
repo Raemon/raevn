@@ -310,15 +310,6 @@ const InviteesTable = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <SendInvitationButton
-          label={`Send all unsent (${unsentReadyRows.length})`}
-          disabled={unsentReadyRows.length === 0}
-          title="Sends to every invitee with an email, a token, a letter (personal or default), and no send timestamp"
-          onSend={() => dispatchSend(unsentReadyRows.map((row) => row.id))}
-        />
-        <button type="button" className={adminButtonClassName} onClick={() => void addInvitee()}>
-          Add invitee
-        </button>
         <span className={`text-base ${adminMutedClassName}`}>
           {sendReport ?? 'double-click a cell to edit; saves on blur · drag a column header to reorder'}
         </span>
@@ -394,6 +385,20 @@ const InviteesTable = ({
             ))}
           </tbody>
         </table>
+      </div>
+      {/* Both controls live below the table, pushed to opposite corners: the
+          send-everything button is the most expensive mis-click on the page, so
+          it sits as far from the rows and from "Add a guest" as the row allows. */}
+      <div className="flex items-center justify-between gap-3">
+        <button type="button" className={adminButtonClassName} onClick={() => void addInvitee()}>
+          Add a guest
+        </button>
+        <SendInvitationButton
+          label={`Send all unsent (${unsentReadyRows.length})`}
+          disabled={unsentReadyRows.length === 0}
+          title="Sends to every invitee with an email, a token, a letter (personal or default), and no send timestamp"
+          onSend={() => dispatchSend(unsentReadyRows.map((row) => row.id))}
+        />
       </div>
     </div>
   );

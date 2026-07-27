@@ -14,6 +14,7 @@ const VARIANTS: Array<{ key: TapestryVariant; label: string }> = [
   { key: 'tree', label: 'The Living Tree' },
   { key: 'tree2', label: 'Tree v2' },
   { key: 'tree3', label: 'Tree v3' },
+  { key: 'tree4', label: 'Tree v4 — woven' },
   { key: 'wreath', label: 'The Woven Wreath' },
 ];
 

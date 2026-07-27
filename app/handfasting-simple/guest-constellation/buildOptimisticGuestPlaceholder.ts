@@ -17,6 +17,8 @@ export const buildOptimisticGuestPlaceholder = (
   isChildUnder2: member.isChildUnder2,
   needsHighChair: member.needsHighChair,
   registeredById,
+  // The note never shows in the sky, so the placeholder need not carry it.
+  note: null,
   inviteeId: null,
   meaningful: false,
   plusOne: '',

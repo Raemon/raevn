@@ -39,6 +39,7 @@ export async function notifyHostsOfNewGuestRegistration(partyRows: Guest[]): Pro
         '',
         'Party:',
         ...partyRows.map(describePartyMember),
+        ...(primary.note ? ['', 'They left a note:', primary.note] : []),
       ].join('\n'),
     });
   } catch (sendError) {
