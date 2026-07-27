@@ -58,7 +58,7 @@ const EditableCell = ({
             inputRef.current?.blur();
           }
         }}
-        className="w-full min-w-24 rounded-sm border border-[#c9a05e]/50 bg-[#0b0a09] px-1 py-0.5 text-sm text-[#f1ece0] outline-none"
+        className="w-full min-w-24 rounded-sm border border-[#b99a5e] bg-white px-2 py-1 text-base text-[#1f1c18] outline-none focus:border-[#7a5a1c]"
       />
     );
   }
@@ -66,7 +66,7 @@ const EditableCell = ({
     <span
       onDoubleClick={beginEditing}
       title="Double-click to edit"
-      className={`block min-h-5 cursor-text ${isSaving ? 'opacity-50' : ''} ${className}`}
+      className={`block min-h-6 cursor-text ${isSaving ? 'opacity-50' : ''} ${className}`}
     >
       {value !== '' ? value : <span className={adminMutedClassName}>{placeholder}</span>}
     </span>

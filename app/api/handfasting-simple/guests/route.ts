@@ -10,6 +10,8 @@ export async function GET() {
   const guests = await prisma.guest.findMany({
     where: { rsvp: true },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    // The tapestry places guests on Elizabeth's or Ray's half by invitee side.
+    include: { invitee: { select: { side: true } } },
   });
   return NextResponse.json(guests);
 }

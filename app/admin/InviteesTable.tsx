@@ -1,47 +1,67 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import type { InviteeAdminRow } from './adminRowTypes';
 import type { InvitationSendResult } from '../api/admin/send-invitations/route';
+import { useAdminRows } from './AdminRowsProvider';
 import {
   adminButtonClassName,
+  adminEmailCellClassName,
   adminMutedClassName,
+  adminNameCellClassName,
   adminTableClassName,
   adminTdClassName,
   adminThClassName,
 } from './adminTableStyles';
-import CopyInviteLinkButton from './CopyInviteLinkButton';
+import DeleteRowButton from './DeleteRowButton';
 import EditableCell from './EditableCell';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
+import {
+  INVITEE_COLUMN_LABELS,
+  orderInviteeColumns,
+  type InviteeColumnId,
+} from './inviteeColumns';
 
-const INVITEE_COLUMNS = [
-  '#',
-  'side',
-  'name',
-  'email',
-  'note',
-  'invite link',
-  'invitation letter',
-  'sent at',
-  'send',
-] as const;
-
-const readyToSend = (row: InviteeAdminRow): boolean =>
-  !!row.email && !!row.inviteToken && !!row.invitationHtml;
+// A chain-link glyph, sized to sit quietly at the right edge of its column —
+// the whole invite-link cell is one small target that opens in a new tab.
+const LinkIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width={16}
+    height={16}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    aria-hidden
+  >
+    <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.4" />
+    <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.32-1.32" />
+  </svg>
+);
 
 const InviteesTable = ({
-  invitees,
   baseUrl,
   adminKey,
+  hasDefaultInvitation,
+  columnOrder,
 }: {
-  invitees: InviteeAdminRow[];
   baseUrl: string;
   adminKey: string | null;
+  hasDefaultInvitation: boolean;
+  columnOrder: string[] | null;
 }) => {
-  const [rows, setRows] = useState(invitees);
+  const readyToSend = (row: InviteeAdminRow): boolean =>
+    !!row.email && !!row.inviteToken && (!!row.invitationHtml || hasDefaultInvitation);
+  // Rows live in AdminRowsProvider, which re-reads the database every few
+  // seconds; setRows still applies our own edits the instant they save.
+  const { invitees: rows, updateInvitees: setRows } = useAdminRows();
   const [editingInviteeId, setEditingInviteeId] = useState<string | null>(null);
   const [sendReport, setSendReport] = useState<string | null>(null);
+  const [columns, setColumns] = useState(() => orderInviteeColumns(columnOrder));
+  const [draggingColumn, setDraggingColumn] = useState<InviteeColumnId | null>(null);
+  const [dropTargetColumn, setDropTargetColumn] = useState<InviteeColumnId | null>(null);
 
   // Persists one field, then mirrors it locally; a false return reverts the cell.
   const patchInviteeField = async (
@@ -58,6 +78,59 @@ const InviteesTable = ({
       beforeRows.map((row) => (row.id === inviteeId ? { ...row, ...patch } : row)),
     );
     return true;
+  };
+
+  // Appends a blank invitee (the server picks the next sortOrder and mints a
+  // token), then leaves it in place for double-click editing.
+  const addInvitee = async () => {
+    const response = await fetch('/api/admin/invitees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: adminKey ?? '' }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      setSendReport('Could not add an invitee.');
+      return;
+    }
+    const { invitee } = (await response.json()) as { invitee: InviteeAdminRow };
+    setRows((beforeRows) => [...beforeRows, invitee]);
+    setSendReport(`Added “${invitee.name}” — double-click its cells to fill it in`);
+  };
+
+  const deleteInvitee = async (inviteeId: string): Promise<boolean> => {
+    const response = await fetch(`/api/admin/invitees/${inviteeId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: adminKey ?? '' }),
+    }).catch(() => null);
+    if (!response?.ok) return false;
+    setRows((beforeRows) => beforeRows.filter((row) => row.id !== inviteeId));
+    if (editingInviteeId === inviteeId) setEditingInviteeId(null);
+    return true;
+  };
+
+  // Drops the dragged column in front of the one it was released on, then
+  // writes the new order to the checked-in JSON file.
+  const moveColumn = async (movedId: InviteeColumnId, beforeId: InviteeColumnId) => {
+    if (movedId === beforeId) return;
+    const withoutMoved = columns.filter((id) => id !== movedId);
+    const targetIndex = withoutMoved.indexOf(beforeId);
+    const nextColumns = [
+      ...withoutMoved.slice(0, targetIndex),
+      movedId,
+      ...withoutMoved.slice(targetIndex),
+    ];
+    setColumns(nextColumns);
+    const response = await fetch('/api/admin/invitee-columns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ columns: nextColumns, key: adminKey ?? '' }),
+    }).catch(() => null);
+    setSendReport(
+      response?.ok
+        ? 'Column order saved to config/inviteeColumnOrder.json — commit it to keep it'
+        : 'Column order changed on screen only — saving to inviteeColumnOrder.json failed',
+    );
   };
 
   const dispatchSend = async (inviteeIds: string[]): Promise<void> => {
@@ -84,6 +157,154 @@ const InviteesTable = ({
     );
   };
 
+  // One renderer per column id; the header row and every body row walk the same
+  // `columns` array, so a drag reorders both at once.
+  const renderCell = (columnId: InviteeColumnId, row: InviteeAdminRow): ReactNode => {
+    switch (columnId) {
+      case 'sortOrder':
+        return (
+          <td key={columnId} className={`${adminTdClassName} w-12`}>
+            <EditableCell
+              value={String(row.sortOrder)}
+              className={adminMutedClassName}
+              onCommit={(nextValue) => {
+                const nextSortOrder = Number.parseInt(nextValue, 10);
+                if (!Number.isInteger(nextSortOrder)) return Promise.resolve(false);
+                return patchInviteeField(row.id, { sortOrder: nextSortOrder });
+              }}
+            />
+          </td>
+        );
+      case 'side':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <EditableCell
+              value={row.side}
+              onCommit={(nextValue) =>
+                nextValue.trim() === ''
+                  ? Promise.resolve(false)
+                  : patchInviteeField(row.id, { side: nextValue.trim() })
+              }
+            />
+          </td>
+        );
+      case 'name':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <EditableCell
+              className={adminNameCellClassName}
+              value={row.name}
+              onCommit={(nextValue) =>
+                nextValue.trim() === ''
+                  ? Promise.resolve(false)
+                  : patchInviteeField(row.id, { name: nextValue.trim() })
+              }
+            />
+          </td>
+        );
+      case 'email':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <EditableCell
+              className={adminEmailCellClassName}
+              value={row.email ?? ''}
+              onCommit={(nextValue) =>
+                patchInviteeField(row.id, { email: nextValue.trim() === '' ? null : nextValue.trim() })
+              }
+            />
+          </td>
+        );
+      case 'note':
+        return (
+          <td key={columnId} className={`${adminTdClassName} max-w-64 text-sm ${adminMutedClassName}`}>
+            <EditableCell
+              value={row.note ?? ''}
+              placeholder=""
+              onCommit={(nextValue) =>
+                patchInviteeField(row.id, { note: nextValue.trim() === '' ? null : nextValue })
+              }
+            />
+          </td>
+        );
+      case 'diagramHovertext':
+        return (
+          <td key={columnId} className={`${adminTdClassName} max-w-56 text-sm ${adminMutedClassName}`}>
+            <EditableCell
+              value={row.diagramHovertext ?? ''}
+              placeholder=""
+              onCommit={(nextValue) =>
+                patchInviteeField(row.id, {
+                  diagramHovertext: nextValue.trim() === '' ? null : nextValue,
+                })
+              }
+            />
+          </td>
+        );
+      case 'link':
+        return (
+          <td key={columnId} className={`${adminTdClassName} w-8 text-right`}>
+            {row.inviteToken ? (
+              <a
+                href={`${baseUrl}/invite/${row.inviteToken}`}
+                target="_blank"
+                rel="noreferrer"
+                title="Open this invite link in a new tab"
+                className="inline-flex text-[#7a5a1c] transition-opacity hover:opacity-70"
+              >
+                <LinkIcon />
+              </a>
+            ) : (
+              <span className={adminMutedClassName} title="Run node scripts/seed-invitees.mjs to mint tokens">
+                —
+              </span>
+            )}
+          </td>
+        );
+      case 'invitationLetter':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <span className="flex items-center gap-2 whitespace-nowrap">
+              <span className={row.invitationHtml ? 'font-medium text-[#2f6b33]' : adminMutedClassName}>
+                {row.invitationHtml ? 'written' : hasDefaultInvitation ? 'default' : 'empty'}
+              </span>
+              <button
+                type="button"
+                className={adminButtonClassName}
+                onClick={() => setEditingInviteeId(editingInviteeId === row.id ? null : row.id)}
+              >
+                {editingInviteeId === row.id ? 'Close' : 'Edit'}
+              </button>
+            </span>
+          </td>
+        );
+      case 'sentAt':
+        return (
+          <td key={columnId} className={`${adminTdClassName} whitespace-nowrap text-sm`}>
+            {row.invitationSentAt ? (
+              new Date(row.invitationSentAt).toLocaleString()
+            ) : (
+              <span className={adminMutedClassName}>—</span>
+            )}
+          </td>
+        );
+      case 'send':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <SendInvitationButton
+              label={row.invitationSentAt ? 'Send again' : 'Send'}
+              disabled={!readyToSend(row)}
+              title={
+                readyToSend(row)
+                  ? `Email this invitation to ${row.email}`
+                  : 'Needs an email, a token, and a letter (personal or default)'
+              }
+              onSend={() => dispatchSend([row.id])}
+            />
+          </td>
+        );
+    }
+  };
+
   const unsentReadyRows = rows.filter((row) => readyToSend(row) && !row.invitationSentAt);
 
   return (
@@ -92,143 +313,79 @@ const InviteesTable = ({
         <SendInvitationButton
           label={`Send all unsent (${unsentReadyRows.length})`}
           disabled={unsentReadyRows.length === 0}
-          title="Sends to every invitee with an email, a token, a written invitation letter, and no send timestamp"
+          title="Sends to every invitee with an email, a token, a letter (personal or default), and no send timestamp"
           onSend={() => dispatchSend(unsentReadyRows.map((row) => row.id))}
         />
-        <span className={`text-sm italic ${adminMutedClassName}`}>
-          {sendReport ?? 'double-click a cell to edit; saves on blur'}
+        <button type="button" className={adminButtonClassName} onClick={() => void addInvitee()}>
+          Add invitee
+        </button>
+        <span className={`text-base ${adminMutedClassName}`}>
+          {sendReport ?? 'double-click a cell to edit; saves on blur · drag a column header to reorder'}
         </span>
       </div>
       <div className="overflow-x-auto">
         <table className={adminTableClassName}>
           <thead>
             <tr>
-              {INVITEE_COLUMNS.map((column) => (
-                <th key={column} className={adminThClassName}>
-                  {column}
+              {columns.map((columnId) => (
+                <th
+                  key={columnId}
+                  draggable
+                  onDragStart={() => setDraggingColumn(columnId)}
+                  onDragEnd={() => {
+                    setDraggingColumn(null);
+                    setDropTargetColumn(null);
+                  }}
+                  onDragOver={(dragEvent) => {
+                    dragEvent.preventDefault();
+                    setDropTargetColumn(columnId);
+                  }}
+                  onDragLeave={() =>
+                    setDropTargetColumn((current) => (current === columnId ? null : current))
+                  }
+                  onDrop={(dropEvent) => {
+                    dropEvent.preventDefault();
+                    setDropTargetColumn(null);
+                    if (draggingColumn) void moveColumn(draggingColumn, columnId);
+                    setDraggingColumn(null);
+                  }}
+                  title="Drag to reorder — the order is saved to config/inviteeColumnOrder.json"
+                  className={`${adminThClassName} cursor-grab select-none active:cursor-grabbing ${
+                    draggingColumn === columnId ? 'opacity-40' : ''
+                  } ${
+                    dropTargetColumn === columnId && draggingColumn !== columnId
+                      ? 'border-l-2 border-l-[#7a5a1c]'
+                      : ''
+                  }`}
+                >
+                  {INVITEE_COLUMN_LABELS[columnId]}
                 </th>
               ))}
+              {/* Deliberately outside the draggable set: a delete control that
+                  wandered under the cursor would be the one column you never
+                  want to mis-click. */}
+              <th className={`${adminThClassName} w-8`} />
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <Fragment key={row.id}>
                 <tr>
-                  <td className={`${adminTdClassName} w-12`}>
-                    <EditableCell
-                      value={String(row.sortOrder)}
-                      className={adminMutedClassName}
-                      onCommit={(nextValue) => {
-                        const nextSortOrder = Number.parseInt(nextValue, 10);
-                        if (!Number.isInteger(nextSortOrder)) return Promise.resolve(false);
-                        return patchInviteeField(row.id, { sortOrder: nextSortOrder });
-                      }}
-                    />
-                  </td>
-                  <td className={adminTdClassName}>
-                    <EditableCell
-                      value={row.side}
-                      onCommit={(nextValue) =>
-                        nextValue.trim() === ''
-                          ? Promise.resolve(false)
-                          : patchInviteeField(row.id, { side: nextValue.trim() })
-                      }
-                    />
-                  </td>
-                  <td className={`${adminTdClassName} whitespace-nowrap`}>
-                    <EditableCell
-                      value={row.name}
-                      onCommit={(nextValue) =>
-                        nextValue.trim() === ''
-                          ? Promise.resolve(false)
-                          : patchInviteeField(row.id, { name: nextValue.trim() })
-                      }
-                    />
-                  </td>
-                  <td className={`${adminTdClassName} font-mono text-xs`}>
-                    <EditableCell
-                      value={row.email ?? ''}
-                      onCommit={(nextValue) =>
-                        patchInviteeField(row.id, { email: nextValue.trim() === '' ? null : nextValue.trim() })
-                      }
-                    />
-                  </td>
-                  <td className={`${adminTdClassName} max-w-64 text-xs italic ${adminMutedClassName}`}>
-                    <EditableCell
-                      value={row.note ?? ''}
-                      placeholder=""
-                      onCommit={(nextValue) =>
-                        patchInviteeField(row.id, { note: nextValue.trim() === '' ? null : nextValue })
-                      }
-                    />
-                  </td>
-                  <td className={adminTdClassName}>
-                    {row.inviteToken ? (
-                      <span className="flex items-center gap-2 whitespace-nowrap">
-                        <CopyInviteLinkButton inviteUrl={`${baseUrl}/invite/${row.inviteToken}`} />
-                        <a
-                          href={`/invite/${row.inviteToken}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-[#c9a05e] underline"
-                        >
-                          open
-                        </a>
-                      </span>
-                    ) : (
-                      <span className={adminMutedClassName} title="Run node scripts/seed-invitees.mjs to mint tokens">
-                        no token
-                      </span>
-                    )}
-                  </td>
-                  <td className={adminTdClassName}>
-                    <span className="flex items-center gap-2 whitespace-nowrap">
-                      <span className={row.invitationHtml ? 'text-[#a4c297]' : adminMutedClassName}>
-                        {row.invitationHtml ? 'written' : 'empty'}
-                      </span>
-                      <button
-                        type="button"
-                        className={adminButtonClassName}
-                        onClick={() => setEditingInviteeId(editingInviteeId === row.id ? null : row.id)}
-                      >
-                        {editingInviteeId === row.id ? 'Close' : 'Edit'}
-                      </button>
-                    </span>
-                  </td>
-                  <td className={`${adminTdClassName} whitespace-nowrap text-xs`}>
-                    {row.invitationSentAt ? (
-                      new Date(row.invitationSentAt).toLocaleString()
-                    ) : (
-                      <span className={adminMutedClassName}>—</span>
-                    )}
-                  </td>
-                  <td className={adminTdClassName}>
-                    <SendInvitationButton
-                      label={row.invitationSentAt ? 'Send again' : 'Send'}
-                      disabled={!readyToSend(row)}
-                      title={
-                        readyToSend(row)
-                          ? `Email this invitation to ${row.email}`
-                          : 'Needs an email, a token, and a written invitation letter'
-                      }
-                      onSend={() => dispatchSend([row.id])}
+                  {columns.map((columnId) => renderCell(columnId, row))}
+                  <td className={`${adminTdClassName} w-8 text-center`}>
+                    <DeleteRowButton
+                      label={row.name}
+                      description="This deletes the invitee"
+                      onDelete={() => deleteInvitee(row.id)}
                     />
                   </td>
                 </tr>
                 {editingInviteeId === row.id && (
                   <tr>
-                    <td className={adminTdClassName} colSpan={INVITEE_COLUMNS.length}>
+                    <td className={adminTdClassName} colSpan={columns.length + 1}>
                       <InvitationEditor
-                        inviteeId={row.id}
                         initialHtml={row.invitationHtml}
-                        adminKey={adminKey}
-                        onSaved={(invitationHtml) =>
-                          setRows((beforeRows) =>
-                            beforeRows.map((beforeRow) =>
-                              beforeRow.id === row.id ? { ...beforeRow, invitationHtml } : beforeRow,
-                            ),
-                          )
-                        }
+                        persist={(invitationHtml) => patchInviteeField(row.id, { invitationHtml })}
                       />
                     </td>
                   </tr>

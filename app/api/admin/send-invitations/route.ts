@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
+import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
 import { sendInvitationEmail } from '@/lib/sendInvitationEmail';
 
 export type InvitationSendResult = {
@@ -26,14 +27,16 @@ export async function POST(request: Request) {
     ? body.inviteeIds.filter((candidate): candidate is string => typeof candidate === 'string')
     : [];
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const defaultInvitationHtml = await getDefaultInvitationHtml();
   const results: InvitationSendResult[] = [];
   for (const inviteeId of inviteeIds) {
     const invitee = await prisma.invitee.findUnique({ where: { id: inviteeId } });
-    if (!invitee || !invitee.email || !invitee.inviteToken || !invitee.invitationHtml) {
+    const invitationHtml = invitee?.invitationHtml ?? defaultInvitationHtml;
+    if (!invitee || !invitee.email || !invitee.inviteToken || !invitationHtml) {
       results.push({ inviteeId, sent: false, reason: 'missing email, token, or invitation content' });
       continue;
     }
-    const outcome = await sendInvitationEmail(invitee, `${baseUrl}/invite/${invitee.inviteToken}`);
+    const outcome = await sendInvitationEmail(invitee, invitationHtml, `${baseUrl}/invite/${invitee.inviteToken}`);
     if (outcome.ok) {
       const sentAt = new Date();
       await prisma.invitee.update({ where: { id: inviteeId }, data: { invitationSentAt: sentAt } });

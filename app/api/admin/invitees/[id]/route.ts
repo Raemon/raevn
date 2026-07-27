@@ -10,6 +10,7 @@ type InviteePatch = {
   name?: string;
   email?: string | null;
   note?: string | null;
+  diagramHovertext?: string | null;
   sortOrder?: number;
   invitationHtml?: string | null;
 };
@@ -20,6 +21,9 @@ const buildInviteePatch = (body: Record<string, unknown>): InviteePatch => {
   if (typeof body.name === 'string' && body.name.trim() !== '') patch.name = body.name.trim();
   if (typeof body.email === 'string') patch.email = body.email.trim() === '' ? null : body.email.trim();
   if (typeof body.note === 'string') patch.note = body.note.trim() === '' ? null : body.note;
+  if (typeof body.diagramHovertext === 'string') {
+    patch.diagramHovertext = body.diagramHovertext.trim() === '' ? null : body.diagramHovertext;
+  }
   if (typeof body.sortOrder === 'number' && Number.isInteger(body.sortOrder)) patch.sortOrder = body.sortOrder;
   if ('invitationHtml' in body) {
     patch.invitationHtml =
@@ -44,6 +48,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!invitee) {
     // Unknown id, or a (side, name) uniqueness collision.
     return NextResponse.json({ error: 'Update failed' }, { status: 409 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+// Removes an invitee outright. Any registrations that arrived through this
+// invitee's link survive with a null inviteeId (schema onDelete: SetNull).
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!isAdminAuthorized(typeof body.key === 'string' ? body.key : undefined)) {
+    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+  }
+  const invitee = await prisma.invitee.delete({ where: { id } }).catch(() => null);
+  if (!invitee) {
+    return NextResponse.json({ error: 'Delete failed' }, { status: 409 });
   }
   return NextResponse.json({ ok: true });
 }

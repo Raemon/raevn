@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import GuestDisplay from './guest-constellation/GuestDisplay';
+import { useEffect, useState, type ReactNode } from 'react';
 import GuestNameEntry from './guest-constellation/GuestNameEntry';
+import GuestTapestry from '../tapestry/GuestTapestry';
+import { guestsToTapestryPersons } from '../tapestry/personAdapters';
+import { LIVE_TAPESTRY_VARIANT, isTapestryVariant } from '../tapestry/tapestryConfig';
+import type { TapestryVariant } from '../tapestry/tapestryTypes';
 import { useGuestConstellation } from './guest-constellation/useGuestConstellation';
 import CalendarShortcutRibbon from './save-the-date/CalendarShortcutRibbon';
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
@@ -15,13 +18,31 @@ export type PersonalizedInvitation = {
   invitationHtml: string | null;
 };
 
-const Handfasting2 = ({ personalization }: { personalization?: PersonalizedInvitation }) => {
+const Handfasting2 = ({
+  personalization,
+  tapestrySection,
+}: {
+  personalization?: PersonalizedInvitation;
+  // /preview renders this very page and swaps in its own tapestry — the one
+  // that plays the invite list arriving — so the surface around it stays the
+  // real thing rather than a lookalike that can drift.
+  tapestrySection?: ReactNode;
+}) => {
   const { guests, persistGuestThroughConstellationCatalog } = useGuestConstellation();
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);
+  // ?tapestry=tree|knot|wreath previews an alternate arrangement in place;
+  // read post-mount so the server render stays static.
+  const [tapestryVariant, setTapestryVariant] = useState<TapestryVariant>(LIVE_TAPESTRY_VARIANT);
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('tapestry');
+    if (isTapestryVariant(requested)) setTapestryVariant(requested);
+  }, []);
   useEffect(() => {
     const updateOpeningPictureOpacity = () => {
       const scrollY = window.scrollY;
-      const fadeSpanPx = window.innerHeight / 2;
+      // `|| 1` guards zero-height viewports (headless/embedded browsers),
+      // where the division otherwise yields NaN opacity.
+      const fadeSpanPx = window.innerHeight / 2 || 1;
       setOpeningPictureOpacity(Math.max(0, 1 - scrollY / fadeSpanPx));
     };
     updateOpeningPictureOpacity();
@@ -77,8 +98,14 @@ const Handfasting2 = ({ personalization }: { personalization?: PersonalizedInvit
         </div>
         <SaveTheDateHeroAnnouncement />
           <CalendarShortcutRibbon />
-          <div className="mt-[2.75rem] flex w-full flex-col items-center px-2">
-            <GuestDisplay guests={guests} nameClassName={`${playfair.className}`} />
+          <div className="mt-[2.75rem] mb-40 flex w-full flex-col items-center px-2">
+            {tapestrySection ?? (
+              <GuestTapestry
+                key={tapestryVariant}
+                persons={guestsToTapestryPersons(guests)}
+                variant={tapestryVariant}
+              />
+            )}
           </div>
       </div>
     </main>

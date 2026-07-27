@@ -1,15 +1,18 @@
 import { headers } from 'next/headers';
-import { Cormorant_Garamond } from 'next/font/google';
-import { prisma } from '@/lib/prisma';
+import { Inter } from 'next/font/google';
 import { isAdminAuthorized } from '@/lib/isAdminAuthorized';
-import type { GuestAdminRow, InviteeAdminRow } from './adminRowTypes';
+import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
+import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
+import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
+import { loadAdminRows } from './loadAdminRows';
+import DefaultInvitationEditor from './DefaultInvitationEditor';
 import GuestsTable from './GuestsTable';
 import InviteesTable from './InviteesTable';
+import MenuOptionsTable from './MenuOptionsTable';
 
-const cormorant = Cormorant_Garamond({
+const adminFont = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const dynamic = 'force-dynamic';
@@ -27,15 +30,16 @@ export default async function AdminPage({
   const { key } = await searchParams;
   if (!isAdminAuthorized(key)) {
     return (
-      <main className={`${cormorant.className} flex min-h-svh items-center justify-center bg-[#0b0a09] text-[#8a8478]`}>
-        <p className="text-2xl italic tracking-wide">This page is for the two of us.</p>
+      <main className={`${adminFont.className} flex min-h-svh items-center justify-center bg-[#faf8f4] text-[#5f5a51]`}>
+        <p className="text-2xl tracking-wide">This page is for the two of us.</p>
       </main>
     );
   }
 
-  const [invitees, guests] = await Promise.all([
-    prisma.invitee.findMany({ orderBy: { sortOrder: 'asc' } }),
-    prisma.guest.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+  const [rows, defaultInvitationHtml, inviteeColumnOrder] = await Promise.all([
+    loadAdminRows(),
+    getDefaultInvitationHtml(),
+    readInviteeColumnOrder(),
   ]);
 
   const headerList = await headers();
@@ -45,42 +49,65 @@ export default async function AdminPage({
     (host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https');
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `${protocol}://${host}`;
 
-  const inviteeRows: InviteeAdminRow[] = invitees.map((invitee) => ({
-    ...invitee,
-    invitationSentAt: invitee.invitationSentAt?.toISOString() ?? null,
-  }));
-  const guestNameById = new Map(guests.map((guest) => [guest.id, guest.name]));
-  const inviteeNameById = new Map(invitees.map((invitee) => [invitee.id, invitee.name]));
-  const guestRows: GuestAdminRow[] = guests.map((guest) => ({
-    ...guest,
-    createdAt: guest.createdAt.toISOString(),
-    registeredByName: guest.registeredById ? guestNameById.get(guest.registeredById) ?? null : null,
-    inviteeName: guest.inviteeId ? inviteeNameById.get(guest.inviteeId) ?? null : null,
-  }));
-
   return (
-    <main className={`${cormorant.className} min-h-svh bg-[#0b0a09] pb-24 text-[#f1ece0]`}>
-      <div className="mx-auto max-w-6xl px-6">
+    <main className={`${adminFont.className} min-h-svh bg-[#faf8f4] pb-24 text-[#1f1c18]`}>
+      <div className="w-full px-6">
         <header className="pb-10 pt-14 text-center">
-          <p className="text-sm uppercase tracking-[.35em] text-[#c9a05e]">Ray &amp; Elizabeth</p>
-          <h1 className="mt-2 text-5xl font-medium">Guest Ledger</h1>
+          <p className="text-base font-semibold uppercase tracking-[.35em] text-[#7a5a1c]">Ray &amp; Elizabeth</p>
+          <h1 className="mt-2 text-5xl font-semibold">Guest Ledger</h1>
         </header>
 
-        <section className="mb-14">
-          <h2 className="mb-3 border-b border-[#c9a05e]/25 pb-2 text-3xl">
-            Invitees <span className="text-xl text-[#c9a05e]">{inviteeRows.length}</span>
-          </h2>
-          <InviteesTable invitees={inviteeRows} baseUrl={baseUrl} adminKey={key ?? null} />
+        <section className="mx-auto mb-14 max-w-6xl">
+          <h2 className="mb-1 text-3xl font-semibold">Default invitation</h2>
+          <p className="mb-4 text-base text-[#6f6a61]">
+            Shown exactly as every invite page renders it, unless you write someone a personal letter.
+          </p>
+          <DefaultInvitationEditor initialHtml={defaultInvitationHtml} adminKey={key ?? null} />
         </section>
 
-        <section className="mb-14">
-          <h2 className="mb-3 border-b border-[#c9a05e]/25 pb-2 text-3xl">
-            Registrations <span className="text-xl text-[#c9a05e]">{guestRows.length}</span>
-          </h2>
-          <GuestsTable guests={guestRows} adminKey={key ?? null} />
-        </section>
+        <AdminRowsProvider
+          initialInvitees={rows.invitees}
+          initialGuests={rows.guests}
+          initialMenuOptions={rows.menuOptions}
+          adminKey={key ?? null}
+        >
+          <section className="mb-14">
+            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
+              Invitees{' '}
+              <span className="text-2xl font-medium text-[#7a5a1c]">
+                <AdminRowCount of="invitees" />
+              </span>
+            </h2>
+            <InviteesTable
+              baseUrl={baseUrl}
+              adminKey={key ?? null}
+              hasDefaultInvitation={!!defaultInvitationHtml}
+              columnOrder={inviteeColumnOrder}
+            />
+          </section>
 
-        <footer className="border-t border-[#c9a05e]/15 pt-5 text-center text-sm italic text-[#6b655a]">
+          <section className="mb-14">
+            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
+              Registrations{' '}
+              <span className="text-2xl font-medium text-[#7a5a1c]">
+                <AdminRowCount of="guests" />
+              </span>
+            </h2>
+            <GuestsTable adminKey={key ?? null} />
+          </section>
+
+          <section className="mb-14">
+            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
+              Menu{' '}
+              <span className="text-2xl font-medium text-[#7a5a1c]">
+                <AdminRowCount of="menuOptions" />
+              </span>
+            </h2>
+            <MenuOptionsTable adminKey={key ?? null} />
+          </section>
+        </AdminRowsProvider>
+
+        <footer className="border-t border-[#ddd6c8] pt-5 text-center text-base text-[#6f6a61]">
           seeded from guestlist.json via scripts/seed-invitees.mjs — invite tokens mint on seed
         </footer>
       </div>

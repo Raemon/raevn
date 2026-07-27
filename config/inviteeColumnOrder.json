@@ -1,0 +1,14 @@
+{
+  "columns": [
+    "sortOrder",
+    "side",
+    "name",
+    "email",
+    "note",
+    "diagramHovertext",
+    "link",
+    "invitationLetter",
+    "sentAt",
+    "send"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "raevn-dev",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev"],
+      "port": 3100,
+      "autoPort": true
+    },
+    {
+      "name": "raevn-dev-isolated",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:preview"],
+      "port": 3140,
+      "autoPort": true
+    },
+    {
+      "name": "raevn-main-worktree",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "--cwd",
+        "/Users/raymondarnold/Documents/coding/raevn-main",
+        "dev",
+        "--port",
+        "3180"
+      ],
+      "port": 3180,
+      "autoPort": true
+    }
+  ]
+}

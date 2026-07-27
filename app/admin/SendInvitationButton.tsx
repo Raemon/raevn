@@ -34,7 +34,7 @@ const SendInvitationButton = ({
   return (
     <button
       type="button"
-      className={`${adminButtonClassName} ${isArmed ? 'border-[#c98d8d] text-[#c98d8d] hover:bg-[#c98d8d]/10' : ''}`}
+      className={`${adminButtonClassName} ${isArmed ? 'border-[#a33a3a] text-[#a33a3a] hover:bg-[#a33a3a]/10' : ''}`}
       disabled={disabled || isSending}
       title={title}
       onClick={handleClick}
