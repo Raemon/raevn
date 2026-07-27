@@ -13,6 +13,7 @@ type InviteePatch = {
   diagramHovertext?: string | null;
   sortOrder?: number;
   invitationHtml?: string | null;
+  partyWithId?: string | null;
 };
 
 const buildInviteePatch = (body: Record<string, unknown>): InviteePatch => {
@@ -31,7 +32,30 @@ const buildInviteePatch = (body: Record<string, unknown>): InviteePatch => {
         ? body.invitationHtml
         : null;
   }
+  if ('partyWithId' in body) {
+    patch.partyWithId =
+      body.partyWithId === null || body.partyWithId === ''
+        ? null
+        : typeof body.partyWithId === 'string' && body.partyWithId.trim() !== ''
+          ? body.partyWithId.trim()
+          : undefined;
+  }
   return patch;
+};
+
+const resolveInviteeAdminFields = async (invitee: {
+  id: string;
+  partyWithId: string | null;
+  side: string;
+}) => {
+  const partyWith = invitee.partyWithId
+    ? await prisma.invitee.findUnique({ where: { id: invitee.partyWithId }, select: { name: true } })
+    : null;
+  return {
+    partyWithId: invitee.partyWithId,
+    partyWithName: partyWith?.name ?? null,
+    side: invitee.side,
+  };
 };
 
 export const PATCH = withAdmin(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -41,12 +65,36 @@ export const PATCH = withAdmin(async (request: Request, { params }: { params: Pr
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'No editable fields in request' }, { status: 400 });
   }
-  const invitee = await prisma.invitee.update({ where: { id }, data: patch }).catch(() => null);
+  if ('partyWithId' in patch) {
+    if (patch.partyWithId === id) {
+      return NextResponse.json({ error: 'An invitee cannot be linked to themselves' }, { status: 400 });
+    }
+    if (patch.partyWithId) {
+      const primary = await prisma.invitee.findUnique({ where: { id: patch.partyWithId } });
+      if (!primary || primary.partyWithId !== null) {
+        return NextResponse.json({ error: 'Party link must point at a primary invitee' }, { status: 400 });
+      }
+    }
+    const partyMemberCount = await prisma.invitee.count({ where: { partyWithId: id } });
+    if (partyMemberCount > 0 && patch.partyWithId) {
+      return NextResponse.json(
+        { error: 'Unlink this invitee’s party members before making them part of another party' },
+        { status: 400 },
+      );
+    }
+  }
+  const updateData: InviteePatch = { ...patch };
+  if (patch.partyWithId) {
+    const primary = await prisma.invitee.findUnique({ where: { id: patch.partyWithId } });
+    if (primary) updateData.side = primary.side;
+  }
+  const invitee = await prisma.invitee.update({ where: { id }, data: updateData }).catch(() => null);
   if (!invitee) {
     // Unknown id, or a (side, name) uniqueness collision.
     return NextResponse.json({ error: 'Update failed' }, { status: 409 });
   }
-  return NextResponse.json({ ok: true });
+  const inviteeFields = await resolveInviteeAdminFields(invitee);
+  return NextResponse.json({ ok: true, invitee: inviteeFields });
 });
 
 // Removes an invitee outright. Any registrations that arrived through this

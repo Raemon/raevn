@@ -259,6 +259,27 @@ const GuestNameEntry = ({
         : autosaveStatus === 'failed'
           ? 'That last change did not save — change it again and it will retry.'
           : '';
+  const [isAutosaveNoticeFaded, setIsAutosaveNoticeFaded] = useState(false);
+  const [isAutosaveNoticeDismissed, setIsAutosaveNoticeDismissed] = useState(false);
+  useEffect(() => {
+    if (autosaveNotice === '') {
+      setIsAutosaveNoticeFaded(false);
+      setIsAutosaveNoticeDismissed(false);
+      return;
+    }
+    setIsAutosaveNoticeDismissed(false);
+    if (autosaveStatus === 'saving') {
+      setIsAutosaveNoticeFaded(false);
+      return;
+    }
+    setIsAutosaveNoticeFaded(false);
+    const fadeFrame = requestAnimationFrame(() => setIsAutosaveNoticeFaded(true));
+    const dismissTimer = setTimeout(() => setIsAutosaveNoticeDismissed(true), 30_000);
+    return () => {
+      cancelAnimationFrame(fadeFrame);
+      clearTimeout(dismissTimer);
+    };
+  }, [autosaveNotice, autosaveStatus]);
 
   return (
     <div className="flex w-full max-w-lg flex-col items-center">
@@ -327,11 +348,6 @@ const GuestNameEntry = ({
                       onDietChange={partyDraft.setPrimaryDiet}
                     />
                     {noteField}
-                    {autosaveNotice !== '' && (
-                      <p aria-live="polite" className={quietNoteClassName}>
-                        {autosaveNotice}
-                      </p>
-                    )}
                   </div>
                 ) : (
                   <div className={PANEL_CARD_CLASS_NAME}>
@@ -360,6 +376,18 @@ const GuestNameEntry = ({
                       Add a family member or +1
                     </button>
                   </>
+                )}
+                {autosaveNotice !== '' && !isAutosaveNoticeDismissed && (
+                  <p
+                    aria-live="polite"
+                    className={`${quietNoteClassName} ${
+                      autosaveStatus === 'saving'
+                        ? 'opacity-100'
+                        : `transition-opacity duration-[30000ms] ease-linear motion-reduce:transition-none ${isAutosaveNoticeFaded ? 'opacity-0' : 'opacity-100'}`
+                    }`}
+                  >
+                    {autosaveNotice}
+                  </p>
                 )}
               </>
             )}

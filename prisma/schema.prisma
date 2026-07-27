@@ -64,6 +64,9 @@ model Invitee {
   inviteToken      String?   @unique // non-guessable token for /invite/[token]
   invitationHtml   String? // host-authored invitation letter (TipTap HTML)
   invitationSentAt DateTime? // set only when a host explicitly sends the invite email
+  partyWithId      String? // set on linked invitees: the primary invite this one belongs to
+  partyWith        Invitee?  @relation("InviteeParty", fields: [partyWithId], references: [id], onDelete: SetNull)
+  partyMembers     Invitee[] @relation("InviteeParty")
   guests           Guest[]
 
   @@unique([side, name])

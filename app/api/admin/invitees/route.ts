@@ -29,7 +29,11 @@ export const POST = withAdmin(async (request: Request) => {
       .catch(() => null);
     if (invitee) {
       return NextResponse.json({
-        invitee: { ...invitee, invitationSentAt: invitee.invitationSentAt?.toISOString() ?? null },
+        invitee: {
+          ...invitee,
+          invitationSentAt: invitee.invitationSentAt?.toISOString() ?? null,
+          partyWithName: null,
+        },
       });
     }
   }

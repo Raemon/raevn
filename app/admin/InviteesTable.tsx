@@ -15,6 +15,7 @@ import {
 } from './adminTableStyles';
 import DeleteRowButton from './DeleteRowButton';
 import EditableCell from './EditableCell';
+import GuestPartyLinkSelect from './GuestPartyLinkSelect';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
 import {
@@ -76,11 +77,23 @@ const InviteesTable = ({
       body: JSON.stringify(patch),
     }).catch(() => null);
     if (!response?.ok) return false;
+    const payload = (await response.json().catch(() => null)) as {
+      invitee?: Partial<InviteeAdminRow>;
+    } | null;
+    const savedFields = payload?.invitee ?? patch;
     setRows((beforeRows) =>
-      beforeRows.map((row) => (row.id === inviteeId ? { ...row, ...patch } : row)),
+      beforeRows.map((row) => (row.id === inviteeId ? { ...row, ...savedFields } : row)),
     );
     return true;
   };
+
+  const partyLinkOptionsForInvitee = (inviteeId: string) =>
+    rows
+      .filter((candidate) => candidate.partyWithId === null && candidate.id !== inviteeId)
+      .map((candidate) => ({
+        id: candidate.id,
+        label: candidate.email ? `${candidate.name} (${candidate.email})` : candidate.name,
+      }));
 
   // Appends a blank invitee (the server picks the next sortOrder and mints a
   // token), then leaves it in place for double-click editing.
@@ -201,6 +214,22 @@ const InviteesTable = ({
                   ? Promise.resolve(false)
                   : patchInviteeField(row.id, { name: nextValue.trim() })
               }
+            />
+          </td>
+        );
+      case 'partyLink':
+        return (
+          <td key={columnId} className={adminTdClassName}>
+            <GuestPartyLinkSelect
+              registeredById={row.partyWithId}
+              primaryOptions={partyLinkOptionsForInvitee(row.id)}
+              familyCount={rows.filter((candidate) => candidate.partyWithId === row.id).length}
+              disabled={rows.some((candidate) => candidate.partyWithId === row.id)}
+              onCommit={async (partyWithId) => {
+                const saved = await patchInviteeField(row.id, { partyWithId });
+                if (!saved) setSendReport('Could not update party link.');
+                return saved;
+              }}
             />
           </td>
         );

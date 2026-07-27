@@ -5,6 +5,7 @@ import type { Guest, Invitee, MenuOption } from '@prisma/client';
 
 export type InviteeAdminRow = Omit<Invitee, 'invitationSentAt'> & {
   invitationSentAt: string | null;
+  partyWithName: string | null;
 };
 
 export type GuestAdminRow = Omit<Guest, 'createdAt'> & {

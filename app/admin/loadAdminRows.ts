@@ -23,6 +23,7 @@ export const loadAdminRows = async (): Promise<{
     invitees: invitees.map((invitee) => ({
       ...invitee,
       invitationSentAt: invitee.invitationSentAt?.toISOString() ?? null,
+      partyWithName: invitee.partyWithId ? inviteeNameById.get(invitee.partyWithId) ?? null : null,
     })),
     guests: guests.map((guest) => ({
       ...guest,

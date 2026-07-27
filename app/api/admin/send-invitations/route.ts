@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { withAdmin } from '@/lib/auth';
 import { getInvitationEmail } from '@/lib/invitationEmail';
 import { sendInvitationEmail } from '@/lib/sendInvitationEmail';
+import { PUBLIC_SITE_URL } from '@/lib/siteUrl';
 
 export type InvitationSendResult = {
   inviteeId: string;
@@ -23,7 +24,7 @@ export const POST = withAdmin(async (request: Request) => {
   const inviteeIds = Array.isArray(body.inviteeIds)
     ? body.inviteeIds.filter((candidate): candidate is string => typeof candidate === 'string')
     : [];
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const baseUrl = PUBLIC_SITE_URL;
   const invitationEmail = await getInvitationEmail();
   const results: InvitationSendResult[] = [];
   for (const inviteeId of inviteeIds) {

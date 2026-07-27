@@ -1,5 +1,6 @@
 'use client';
 
+import { cormorant } from '../save-the-date/handfastingInvitationTypography';
 import type { FamilyMemberDraft, MenuOptionPreview } from './partyRegistrationTypes';
 import CelestialCheckbox from './CelestialCheckbox';
 import { PANEL_CARD_CLASS_NAME } from './panelCard';
@@ -24,7 +25,7 @@ const FamilyMemberRow = ({
         onChange={(inputEvent) => onPatch({ name: inputEvent.target.value })}
         placeholder="Family member's name..."
         autoComplete="off"
-        className="w-full bg-transparent text-center p-2 rounded-sm outline-none border-none text-white/90"
+        className={`${cormorant.className} w-full bg-transparent text-left p-2 rounded-sm outline-none border-none font-light italic tracking-[0.04em] text-white/90 placeholder:text-white/40`}
       />
       <button
         type="button"

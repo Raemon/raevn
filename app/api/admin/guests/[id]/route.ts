@@ -13,6 +13,7 @@ type GuestPatch = {
   rsvp?: boolean | null;
   isChildUnder2?: boolean;
   needsHighChair?: boolean;
+  registeredById?: string | null;
 };
 
 const buildGuestPatch = (body: Record<string, unknown>): GuestPatch => {
@@ -24,7 +25,38 @@ const buildGuestPatch = (body: Record<string, unknown>): GuestPatch => {
   }
   if (typeof body.isChildUnder2 === 'boolean') patch.isChildUnder2 = body.isChildUnder2;
   if (typeof body.needsHighChair === 'boolean') patch.needsHighChair = body.needsHighChair;
+  if ('registeredById' in body) {
+    patch.registeredById =
+      body.registeredById === null || body.registeredById === ''
+        ? null
+        : typeof body.registeredById === 'string' && body.registeredById.trim() !== ''
+          ? body.registeredById.trim()
+          : undefined;
+  }
   return patch;
+};
+
+const resolveGuestAdminFields = async (guest: {
+  id: string;
+  registeredById: string | null;
+  inviteeId: string | null;
+  rsvp: boolean | null;
+}) => {
+  const [registeredBy, invitee] = await Promise.all([
+    guest.registeredById
+      ? prisma.guest.findUnique({ where: { id: guest.registeredById }, select: { name: true } })
+      : Promise.resolve(null),
+    guest.inviteeId
+      ? prisma.invitee.findUnique({ where: { id: guest.inviteeId }, select: { name: true } })
+      : Promise.resolve(null),
+  ]);
+  return {
+    registeredById: guest.registeredById,
+    registeredByName: registeredBy?.name ?? null,
+    inviteeId: guest.inviteeId,
+    inviteeName: invitee?.name ?? null,
+    rsvp: guest.rsvp,
+  };
 };
 
 export const PATCH = withAdmin(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -34,11 +66,38 @@ export const PATCH = withAdmin(async (request: Request, { params }: { params: Pr
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'No editable fields in request' }, { status: 400 });
   }
-  const guest = await prisma.guest.update({ where: { id }, data: patch }).catch(() => null);
+  if ('registeredById' in patch) {
+    if (patch.registeredById === id) {
+      return NextResponse.json({ error: 'A guest cannot be linked to themselves' }, { status: 400 });
+    }
+    if (patch.registeredById) {
+      const primary = await prisma.guest.findUnique({ where: { id: patch.registeredById } });
+      if (!primary || primary.registeredById !== null) {
+        return NextResponse.json({ error: 'Party link must point at a primary registrant' }, { status: 400 });
+      }
+    }
+    const familyCount = await prisma.guest.count({ where: { registeredById: id } });
+    if (familyCount > 0 && patch.registeredById !== null && patch.registeredById !== undefined) {
+      return NextResponse.json(
+        { error: 'Unlink this guest’s family members before making them part of another party' },
+        { status: 400 },
+      );
+    }
+  }
+  const updateData: GuestPatch & { inviteeId?: string | null } = { ...patch };
+  if (patch.registeredById) {
+    const primary = await prisma.guest.findUnique({ where: { id: patch.registeredById } });
+    if (primary) {
+      updateData.inviteeId = primary.inviteeId;
+      updateData.rsvp = primary.rsvp;
+    }
+  }
+  const guest = await prisma.guest.update({ where: { id }, data: updateData }).catch(() => null);
   if (!guest) {
     return NextResponse.json({ error: 'Update failed' }, { status: 409 });
   }
-  return NextResponse.json({ ok: true });
+  const guestFields = await resolveGuestAdminFields(guest);
+  return NextResponse.json({ ok: true, guest: guestFields });
 });
 
 // Removes one registration. Anyone this guest registered stays, with a null

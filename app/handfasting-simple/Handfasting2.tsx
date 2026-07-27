@@ -58,7 +58,7 @@ const Handfasting2 = ({
         className=" inset-0 z-0 bg-[url('/sunset.jpg')] bg-cover h-[100vh] fixed bg-[center_38%]"
         style={{ opacity: openingPictureOpacity }}
       />
-      <div className={`relative z-10 box-border flex min-h-svh flex-col items-center justify-center text-center gap-16 text-center w-full${personalization ? ' pb-52' : ''}`}>
+      <div className="relative z-10 box-border flex min-h-svh flex-col items-center justify-center text-center gap-16 text-center w-full">
         <div className="flex flex-col items-center">
           <h1
             className={`${playfair.className} mt-[500px] text-4xl md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#f1ece0] mb-4`}
@@ -113,15 +113,15 @@ const Handfasting2 = ({
               <TreeV4Tapestry persons={guestsToTapestryPersons(guests)} />
             )}
           </div>
-        {/* The date sits under the tree for hosts; invitees get it pinned in the
-            footer so the calendar links stay reachable while scrolling. */}
-        {!personalization && (
+        {/* The date sits under the tree; invitees get it in a footer band. */}
+        {personalization ? (
+          <SaveTheDateFooter />
+        ) : (
           <div className="mb-40">
             <SaveTheDateHeroAnnouncement />
           </div>
         )}
       </div>
-      {personalization && <SaveTheDateFooter />}
     </main>
   );
 };

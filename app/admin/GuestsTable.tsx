@@ -13,6 +13,7 @@ import {
 } from './adminTableStyles';
 import DeleteRowButton from './DeleteRowButton';
 import EditableCell from './EditableCell';
+import GuestPartyLinkSelect from './GuestPartyLinkSelect';
 
 const GUEST_COLUMNS = [
   'name',
@@ -20,7 +21,7 @@ const GUEST_COLUMNS = [
   'diet',
   'child under 2',
   'high chair',
-  'registered by',
+  'party link',
   'invitee link',
   'created',
 ] as const;
@@ -58,9 +59,23 @@ const GuestsTable = () => {
       body: JSON.stringify(patch),
     }).catch(() => null);
     if (!response?.ok) return false;
-    setRows((beforeRows) => beforeRows.map((row) => (row.id === guestId ? { ...row, ...patch } : row)));
+    const payload = (await response.json().catch(() => null)) as {
+      guest?: Partial<GuestAdminRow>;
+    } | null;
+    const savedFields = payload?.guest ?? patch;
+    setRows((beforeRows) =>
+      beforeRows.map((row) => (row.id === guestId ? { ...row, ...savedFields } : row)),
+    );
     return true;
   };
+
+  const partyLinkOptionsForGuest = (guestId: string) =>
+    rows
+      .filter((candidate) => candidate.registeredById === null && candidate.id !== guestId)
+      .map((candidate) => ({
+        id: candidate.id,
+        label: candidate.inviteeName ? `${candidate.name} (${candidate.inviteeName})` : candidate.name,
+      }));
 
   // A blank registration for the people who RSVP by text instead of the site;
   // the row lands at the bottom for double-click editing.
@@ -167,7 +182,17 @@ const GuestsTable = () => {
                   />
                 </td>
                 <td className={adminTdClassName}>
-                  <span className={`block ${adminNameCellClassName} ${adminMutedClassName}`}>{row.registeredByName}</span>
+                  <GuestPartyLinkSelect
+                    registeredById={row.registeredById}
+                    primaryOptions={partyLinkOptionsForGuest(row.id)}
+                    familyCount={rows.filter((candidate) => candidate.registeredById === row.id).length}
+                    disabled={rows.some((candidate) => candidate.registeredById === row.id)}
+                    onCommit={async (registeredById) => {
+                      const saved = await patchGuestField(row.id, { registeredById });
+                      if (!saved) setNotice('Could not update party link.');
+                      return saved;
+                    }}
+                  />
                 </td>
                 <td className={adminTdClassName}>
                   <span className={`block ${adminNameCellClassName} ${adminMutedClassName}`}>{row.inviteeName}</span>
