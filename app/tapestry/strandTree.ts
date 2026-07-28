@@ -184,6 +184,63 @@ const sampleBundleSpline = (controls: Vec[], beta: number, samples: number): Vec
   return points;
 };
 
+// Sampling a bundle spline uniformly is uniform in spline *parameter*, not in
+// distance: two knots sitting close together get as many samples between them
+// as two knots far apart. A thread twisting in a bundle doesn't care, but
+// anything that has to come out evenly spaced on screen does — the couple's
+// braid, whose lobes must all be the same size — and for that you need the map
+// from parameter progress to arc-length progress. Returned as a lookup table
+// over exactly the samples `buildWovenStrand` will go on to use, so an index
+// into one is an index into the other.
+const smoothstep01 = (t: number) => {
+  const clamped = Math.min(1, Math.max(0, t));
+  return clamped * clamped * (3 - 2 * clamped);
+};
+
+// Opens and closes the braid window with a flat plateau and eased edges, so
+// the swing does not snap on with the linear kink the old tent envelope had.
+export const braidSwingEnvelope = (w: number, ease: number): number =>
+  smoothstep01(Math.min(1, w / ease)) * smoothstep01(Math.min(1, (1 - w) / ease));
+
+// One cord's signed offset through a two-strand braid. Crossings sit at zero;
+// the extrema are the round bellies of each lobe. A plain sine reads as a
+// plotted wave — power-shaping and a small third harmonic pull it toward the
+// circular-arc profile of rope wound on a cylinder.
+export const braidTurnAt = (
+  t: number,
+  lobes: number,
+  phase: number,
+  lobeRoundness: number,
+  interlaceHarmonic: number,
+): number => {
+  const angle = Math.PI * lobes * t + phase;
+  const sin = Math.sin(angle);
+  const interlace = interlaceHarmonic * Math.sin(3 * angle);
+  const shaped = (sin - interlace) / (1 + interlaceHarmonic);
+  const sign = shaped >= 0 ? 1 : -1;
+  return sign * Math.pow(Math.abs(shaped), lobeRoundness);
+};
+
+export const arcProgressTable = (
+  anchors: StrandAnchor[],
+  beta: number,
+  samples: number,
+): { arcProgress: number[]; totalLength: number } => {
+  const points = sampleBundleSpline(
+    anchors.map((anchor) => anchor.point),
+    beta,
+    samples,
+  );
+  const cumulative = [0];
+  for (let i = 1; i < points.length; i++) {
+    cumulative.push(
+      cumulative[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y),
+    );
+  }
+  const totalLength = cumulative[cumulative.length - 1] || 1;
+  return { arcProgress: cumulative.map((distance) => distance / totalLength), totalLength };
+};
+
 // A stroke is one width for its whole length, which cannot express a cord that
 // starts as a thin rootlet, swells into the trunk and thins away into the
 // canopy. So the couple's two cords are drawn as filled ribbons instead: walk
@@ -333,13 +390,18 @@ export const buildWovenStrand = (
 export type WeaveRun = { start: number; end: number; front: boolean };
 
 // How far each run continues past the crossing it was cut at. One shared
-// sample merely lets the ribbons meet; a couple more makes the front ribbon
-// visibly lie ACROSS the back one, which is what sells each over-pass.
-const RUN_OVERLAP = 2;
+// sample merely lets the ribbons meet; a little more makes the front ribbon
+// visibly lie ACROSS the back one, which is what sells each over-pass. It is a
+// fraction of the run rather than a sample count because a strand sampled
+// densely — the couple's cords, whose braid is squeezed into a short window —
+// would otherwise get an overlap of no distance at all, and every crossing
+// would go back to reading as a butt joint between two ribbons.
+const RUN_OVERLAP_FRACTION = 0.014;
 
 export const splitIntoWeaveRuns = (swing: number[]): WeaveRun[] => {
   const runs: WeaveRun[] = [];
   const last = swing.length - 1;
+  const RUN_OVERLAP = Math.max(2, Math.round(swing.length * RUN_OVERLAP_FRACTION));
   let start = 0;
   for (let i = 1; i < swing.length; i++) {
     const crossed = swing[i] >= 0 !== swing[i - 1] >= 0;
