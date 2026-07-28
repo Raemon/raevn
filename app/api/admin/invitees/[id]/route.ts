@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdmin } from '@/lib/auth';
+import { sideBlendFromSide } from '@/lib/sideBlend';
 
 // Partial update of host-editable invitee fields — table cell edits and the
 // TipTap invitation letter. Unknown fields are ignored.
 
 type InviteePatch = {
   side?: string;
+  sideBlend?: number;
   name?: string;
   email?: string | null;
   note?: string | null;
@@ -19,6 +21,9 @@ type InviteePatch = {
 const buildInviteePatch = (body: Record<string, unknown>): InviteePatch => {
   const patch: InviteePatch = {};
   if (typeof body.side === 'string' && body.side.trim() !== '') patch.side = body.side.trim();
+  if (typeof body.sideBlend === 'number' && Number.isFinite(body.sideBlend)) {
+    patch.sideBlend = Math.min(1, Math.max(0, body.sideBlend));
+  }
   if (typeof body.name === 'string' && body.name.trim() !== '') patch.name = body.name.trim();
   if (typeof body.email === 'string') patch.email = body.email.trim() === '' ? null : body.email.trim();
   if (typeof body.note === 'string') patch.note = body.note.trim() === '' ? null : body.note;
@@ -47,6 +52,7 @@ const resolveInviteeAdminFields = async (invitee: {
   id: string;
   partyWithId: string | null;
   side: string;
+  sideBlend: number;
 }) => {
   const partyWith = invitee.partyWithId
     ? await prisma.invitee.findUnique({ where: { id: invitee.partyWithId }, select: { name: true } })
@@ -55,6 +61,7 @@ const resolveInviteeAdminFields = async (invitee: {
     partyWithId: invitee.partyWithId,
     partyWithName: partyWith?.name ?? null,
     side: invitee.side,
+    sideBlend: invitee.sideBlend,
   };
 };
 
@@ -86,7 +93,10 @@ export const PATCH = withAdmin(async (request: Request, { params }: { params: Pr
   const updateData: InviteePatch = { ...patch };
   if (patch.partyWithId) {
     const primary = await prisma.invitee.findUnique({ where: { id: patch.partyWithId } });
-    if (primary) updateData.side = primary.side;
+    if (primary) {
+      updateData.side = primary.side;
+      updateData.sideBlend = primary.sideBlend;
+    }
   }
   const invitee = await prisma.invitee.update({ where: { id }, data: updateData }).catch(() => null);
   if (!invitee) {

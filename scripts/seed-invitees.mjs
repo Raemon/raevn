@@ -6,6 +6,12 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+const sideBlendFromSide = (side) => {
+  if (side === 'elizabeth') return 1;
+  if (side === 'ray') return 0;
+  return 0.5;
+};
+
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const dataPath = path.join(root, 'guestlist.json');
 
@@ -23,6 +29,7 @@ let upserted = 0;
 for (const [i, row] of rows.entries()) {
   const data = {
     side: row.side,
+    sideBlend: sideBlendFromSide(row.side),
     name: row.name,
     email: row.email ?? null,
     note: row.note ?? null,

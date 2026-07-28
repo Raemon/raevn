@@ -1,4 +1,5 @@
 import type { GuestWithOptimistic } from '../handfasting-simple/guest-constellation/guestTypes';
+import { resolveSideBlend } from '@/lib/sideBlend';
 import { hashStringToSeed } from './tapestrySeededRandom';
 import type { TapestryPerson, TapestrySide } from './tapestryTypes';
 
@@ -14,23 +15,29 @@ const resolveSide = (side: string | null | undefined, seedText: string): Tapestr
 };
 
 export const guestsToTapestryPersons = (guests: GuestWithOptimistic[]): TapestryPerson[] =>
-  guests.map((guest) => ({
-    id: guest.id,
-    name: guest.name,
-    side: resolveSide(guest.invitee?.side, guest.registeredById ?? guest.id),
-    familyKey: guest.registeredById ?? guest.id,
-    hovertext: guest.registeredById ? null : guest.invitee?.diagramHovertext ?? null,
-  }));
+  guests.map((guest) => {
+    const side = resolveSide(guest.invitee?.side, guest.registeredById ?? guest.id);
+    return {
+      id: guest.id,
+      name: guest.name,
+      side,
+      sideBlend: resolveSideBlend(guest.invitee?.sideBlend, guest.invitee?.side ?? side),
+      familyKey: guest.registeredById ?? guest.id,
+      hovertext: guest.registeredById ? null : guest.invitee?.diagramHovertext ?? null,
+    };
+  });
 
 export const inviteeRowToTapestryPerson = (invitee: {
   id: string;
   name: string;
   side: string;
+  sideBlend?: number | null;
   diagramHovertext?: string | null;
 }): TapestryPerson => ({
   id: invitee.id,
   name: invitee.name,
   side: resolveSide(invitee.side, invitee.id),
+  sideBlend: resolveSideBlend(invitee.sideBlend, invitee.side),
   familyKey: invitee.id,
   hovertext: invitee.diagramHovertext ?? null,
 });

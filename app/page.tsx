@@ -78,6 +78,7 @@ export default async function Page() {
         inviteToken: invitee.inviteToken ?? '',
         invitationHtml,
         side: invitee.side,
+        sideBlend: invitee.sideBlend,
         diagramHovertext: invitee.diagramHovertext,
       }}
     />

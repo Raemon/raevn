@@ -15,6 +15,7 @@ export type PersonalizedInvitation = {
   inviteToken: string;
   invitationHtml: string | null;
   side: string;
+  sideBlend?: number | null;
   diagramHovertext?: string | null;
 };
 
@@ -31,7 +32,11 @@ const Handfasting2 = ({
   const { guests, celebratedPrimaryId, persistGuestThroughConstellationCatalog, retireGuestFromConstellation } =
     useGuestConstellation(
       personalization
-        ? { side: personalization.side, diagramHovertext: personalization.diagramHovertext }
+        ? {
+            side: personalization.side,
+            sideBlend: personalization.sideBlend,
+            diagramHovertext: personalization.diagramHovertext,
+          }
         : undefined,
     );
   const [openingPictureOpacity, setOpeningPictureOpacity] = useState(1);

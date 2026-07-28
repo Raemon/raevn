@@ -53,6 +53,7 @@ export const buildOptimisticPartyPlaceholders = (
     if (memberIndex === 0 && inviteeTapestryHint) {
       row.invitee = {
         side: inviteeTapestryHint.side,
+        sideBlend: inviteeTapestryHint.sideBlend ?? null,
         diagramHovertext: inviteeTapestryHint.diagramHovertext ?? null,
       };
     }

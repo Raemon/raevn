@@ -5,6 +5,7 @@
 export const INVITEE_COLUMN_IDS = [
   'sortOrder',
   'side',
+  'sideBlend',
   'name',
   'partyLink',
   'email',
@@ -21,6 +22,7 @@ export type InviteeColumnId = (typeof INVITEE_COLUMN_IDS)[number];
 export const INVITEE_COLUMN_LABELS: Record<InviteeColumnId, string> = {
   sortOrder: '#',
   side: 'side',
+  sideBlend: 'side blend',
   name: 'name',
   partyLink: 'party link',
   email: 'email',

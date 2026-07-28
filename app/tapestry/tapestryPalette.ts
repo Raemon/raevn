@@ -14,11 +14,19 @@ const mixHex = (from: string, to: string, t: number) => {
   return `#${blended.join('')}`;
 };
 
+// How far across from cream to a side's own colour a point at x sits. Full
+// colour is reached well inside the half span and the exponent leaves the
+// centre quickly, so cream is a seam down the middle of the tree rather than
+// the colour most of the crown is painted in.
+const spectrumMixAt = (x: number, centerX: number, halfSpan: number): number => {
+  const reach = Math.abs(x - centerX) / (halfSpan * PALETTE.spectrumFullAt);
+  return Math.pow(Math.min(1, reach), PALETTE.spectrumEase);
+};
+
 // Blue on Elizabeth's side, maroon on Ray's, brightening to cream at the centre.
 export const spectrumColorAt = (x: number, centerX: number, halfSpan: number): string => {
-  const t = Math.min(1, Math.max(-1, (x - centerX) / halfSpan));
-  if (t <= 0) return mixHex(PALETTE.elizabeth, PALETTE.spectrumCenter, -t);
-  return mixHex(PALETTE.spectrumCenter, PALETTE.raymond, t);
+  const side = x <= centerX ? PALETTE.elizabeth : PALETTE.raymond;
+  return mixHex(PALETTE.spectrumCenter, side, spectrumMixAt(x, centerX, halfSpan));
 };
 
 // Darkened spectrum for strand ends — names stay at full spectrumColorAt.
@@ -32,6 +40,20 @@ export const spectrumStrandEdgeAt = (
   if (edge === 'root') return mixHex(hue, PALETTE.cordRootShade, PALETTE.strandRootDarken);
   return mixHex(hue, PALETTE.twigTip, PALETTE.twigFade);
 };
+
+// Where a strand passes through the trunk. It used to pass through pure cream,
+// which painted the trunk white however its two halves were coloured.
+export const spectrumStrandMidAt = (x: number, centerX: number, halfSpan: number): string =>
+  mixHex(spectrumColorAt(x, centerX, halfSpan), PALETTE.spectrumCenter, PALETTE.threadCenterLift);
+
+// A cord carries its owner's colour the whole way rather than reading it off
+// the spectrum: both roots sit close enough to the trunk that the spectrum
+// would hand them the cream centre, which is what bleached the braid.
+export const cordRootColorFor = (color: string): string =>
+  mixHex(color, PALETTE.cordRootShade, PALETTE.cordRootMix);
+
+export const cordTipColorFor = (color: string): string =>
+  mixHex(color, PALETTE.twigTip, PALETTE.cordTipMix);
 
 // Moonlit silver for Elizabeth's people, maroon for Ray's, candle cream for
 // shared friends — all chosen to glow against the page's black ground. The

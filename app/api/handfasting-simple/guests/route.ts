@@ -21,7 +21,7 @@ export async function GET() {
     where: { rsvp: true },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     // The tapestry places guests on Elizabeth's or Ray's half by invitee side.
-    include: { invitee: { select: { side: true, diagramHovertext: true } } },
+    include: { invitee: { select: { side: true, sideBlend: true, diagramHovertext: true } } },
   });
   return NextResponse.json(guests, {
     headers: { 'Cache-Control': 'private, no-store' },
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   });
   void notifyHostsOfNewGuestRegistration(partyRows);
   const inviteeTapestry = invitee
-    ? { side: invitee.side, diagramHovertext: invitee.diagramHovertext }
+    ? { side: invitee.side, sideBlend: invitee.sideBlend, diagramHovertext: invitee.diagramHovertext }
     : null;
   return NextResponse.json(
     partyRows.map((row) => ({

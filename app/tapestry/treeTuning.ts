@@ -273,6 +273,17 @@ export const PALETTE = {
   // Where blue and maroon meet in the middle of the tree — names and strands
   // both lighten here as they cross the centre.
   spectrumCenter: '#f5f0e8',
+  // How far out a point has to sit to be fully its own side's colour, as a
+  // fraction of the half span, and the shaping on the way there. Reaching full
+  // colour only at the frame's edge left almost every name a pale wash of
+  // cream, so the ramp finishes inside the crown and an exponent below 1 gets
+  // it moving immediately.
+  spectrumFullAt: 0.42,
+  spectrumEase: 0.5,
+  // How far a strand lifts back toward cream as it passes through the trunk.
+  // Enough that the weave still brightens at the centre, short of the pure
+  // cream that used to paint the whole trunk white.
+  threadCenterLift: 0.28,
   // How far strand ends are pulled dark at root and tip so names read brighter
   // on top. Tip reuses twigFade; root mixes toward cordRootShade.
   strandRootDarken: 0.55,

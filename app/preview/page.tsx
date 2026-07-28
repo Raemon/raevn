@@ -21,7 +21,7 @@ export default async function TapestryPreviewPage() {
   let persons: TapestryPerson[] = [];
   try {
     const invitees = await prisma.invitee.findMany({
-      select: { id: true, name: true, side: true, diagramHovertext: true },
+      select: { id: true, name: true, side: true, sideBlend: true, diagramHovertext: true },
       orderBy: [{ side: 'asc' }, { sortOrder: 'asc' }],
     });
     persons = invitees.map(inviteeRowToTapestryPerson);

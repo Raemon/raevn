@@ -27,7 +27,8 @@ export const groupIntoFamilies = (persons: TapestryPerson[]): TapestryFamily[] =
   }
   return [...familiesByKey.values()].sort(
     (a, b) =>
-      SIDE_SEQUENCE[a.side] - SIDE_SEQUENCE[b.side] || a.familyKey.localeCompare(b.familyKey),
+      (a.members[0]?.sideBlend ?? 0.5) - (b.members[0]?.sideBlend ?? 0.5) ||
+      a.familyKey.localeCompare(b.familyKey),
   );
 };
 

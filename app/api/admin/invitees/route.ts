@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdmin } from '@/lib/auth';
+import { sideBlendFromSide } from '@/lib/sideBlend';
 
 // Creates a blank invitee for the admin table to edit in place. Tokens are
 // minted here the same way scripts/seed-invitees.mjs mints them, so a
@@ -25,7 +26,15 @@ export const POST = withAdmin(async (request: Request) => {
   for (let attempt = 1; attempt <= 50; attempt += 1) {
     const name = attempt === 1 ? requestedName : `${requestedName} ${attempt}`;
     const invitee = await prisma.invitee
-      .create({ data: { side, name, sortOrder, inviteToken: randomBytes(16).toString('hex') } })
+      .create({
+        data: {
+          side,
+          sideBlend: sideBlendFromSide(side),
+          name,
+          sortOrder,
+          inviteToken: randomBytes(16).toString('hex'),
+        },
+      })
       .catch(() => null);
     if (invitee) {
       return NextResponse.json({

@@ -1,6 +1,13 @@
 import { line, curveCatmullRom } from 'd3-shape';
 import { playfair, cormorant } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
-import { spectrumColorAt, spectrumStrandEdgeAt, truncateName } from './tapestryPalette';
+import {
+  cordRootColorFor,
+  cordTipColorFor,
+  spectrumColorAt,
+  spectrumStrandEdgeAt,
+  spectrumStrandMidAt,
+  truncateName,
+} from './tapestryPalette';
 import { orderPersonsForTapestry } from './tapestryOrdering';
 import { createSeededRandom } from './tapestrySeededRandom';
 import {
@@ -136,22 +143,15 @@ const TreeV4Tapestry = ({
   const collar: Vec = { x: CANOPY_X, y: ROOT_Y - trunkHeight * ROOTS.collarRise };
   const trunkTop: StrandAnchor = { point: { x: CANOPY_X, y: canopyY }, load: slots.length };
 
-  const sharedSlots = slots.filter((slot) => slot.person.side === 'both');
   const rootPrefixById = new Map<string, StrandAnchor[]>();
   slots.forEach((slot) => {
-    const sideCount = slots.filter((other) => other.person.side === slot.person.side).length;
-    let tip: Vec;
-    if (slot.person.side === 'elizabeth') tip = elizabethRoot;
-    else if (slot.person.side === 'ray') tip = raymondRoot;
-    else {
-      // Shared friends fan out between the two cluster roots, one rootlet each.
-      const place = sharedSlots.findIndex((other) => other.person.id === slot.person.id);
-      const spread = sharedSlots.length > 1 ? place / (sharedSlots.length - 1) - 0.5 : 0;
-      tip = {
-        x: CANOPY_X + spread * rootSpread * ROOTS.sharedSpreadRatio,
-        y: ROOT_Y + rootDrop * ROOTS.sharedDropRatio,
-      };
-    }
+    const sideCount = slots.filter(
+      (other) => Math.abs(other.person.sideBlend - slot.person.sideBlend) < 0.34,
+    ).length;
+    const tip: Vec = {
+      x: lerp(raymondRoot.x, elizabethRoot.x, slot.person.sideBlend),
+      y: lerp(raymondRoot.y, elizabethRoot.y, slot.person.sideBlend),
+    };
     rootPrefixById.set(slot.person.id, [
       { point: tip, load: sideCount },
       { point: collar, load: slots.length },
@@ -417,34 +417,39 @@ const TreeV4Tapestry = ({
             />
             <stop offset="100%" stopColor={PALETTE.groundGlow} stopOpacity="0" />
           </radialGradient>
-          {strands.map(({ slot, points }) =>
-            points.length === 0 ? null : (
+          {strands.map(({ slot, points }) => {
+            if (points.length === 0) return null;
+            // One hue for the whole strand, taken from where its own leaf ends
+            // up. Reading the colour off each end separately meant a thread
+            // spent its root and trunk in the cream centre — every strand
+            // starts at a root cluster near the trunk — and only found its
+            // side's colour in the last stretch out to the leaf.
+            const tip = points[points.length - 1];
+            return (
               <linearGradient
                 key={slot.person.id}
                 id={`rvtree4-thread-${slot.slotIndex}`}
                 gradientUnits="userSpaceOnUse"
                 x1={points[0].x}
                 y1={points[0].y}
-                x2={points[points.length - 1].x}
-                y2={points[points.length - 1].y}
+                x2={tip.x}
+                y2={tip.y}
               >
                 <stop
                   offset="0%"
-                  stopColor={spectrumStrandEdgeAt(points[0].x, CANOPY_X, spectrumHalfSpan, 'root')}
+                  stopColor={spectrumStrandEdgeAt(tip.x, CANOPY_X, spectrumHalfSpan, 'root')}
                 />
-                <stop offset="50%" stopColor={PALETTE.spectrumCenter} />
+                <stop
+                  offset="50%"
+                  stopColor={spectrumStrandMidAt(tip.x, CANOPY_X, spectrumHalfSpan)}
+                />
                 <stop
                   offset="100%"
-                  stopColor={spectrumStrandEdgeAt(
-                    points[points.length - 1].x,
-                    CANOPY_X,
-                    spectrumHalfSpan,
-                    'tip',
-                  )}
+                  stopColor={spectrumStrandEdgeAt(tip.x, CANOPY_X, spectrumHalfSpan, 'tip')}
                 />
               </linearGradient>
-            ),
-          )}
+            );
+          })}
           {coupleCords.map((cord) => (
             <linearGradient
               key={cord.key}
@@ -455,15 +460,9 @@ const TreeV4Tapestry = ({
               x2={cord.tip.x}
               y2={cord.tip.y}
             >
-              <stop
-                offset="0%"
-                stopColor={spectrumStrandEdgeAt(cord.root.x, CANOPY_X, spectrumHalfSpan, 'root')}
-              />
-              <stop offset="50%" stopColor={PALETTE.spectrumCenter} />
-              <stop
-                offset="100%"
-                stopColor={spectrumStrandEdgeAt(cord.tip.x, CANOPY_X, spectrumHalfSpan, 'tip')}
-              />
+              <stop offset="0%" stopColor={cordRootColorFor(cord.color)} />
+              <stop offset={`${PALETTE.cordFullStop * 100}%`} stopColor={cord.color} />
+              <stop offset="100%" stopColor={cordTipColorFor(cord.color)} />
             </linearGradient>
           ))}
         </defs>

@@ -1,4 +1,5 @@
 import type { TapestryPerson, TapestrySide } from '../tapestry/tapestryTypes';
+import { sideBlendFromSide } from '@/lib/sideBlend';
 
 // Stand-in guest list so /preview still renders a full composition when the
 // database is unreachable or the invite list hasn't been seeded yet.
@@ -62,6 +63,7 @@ export const buildSampleGuestList = (): TapestryPerson[] => {
     id: idsByName.get(name)!,
     name,
     side,
+    sideBlend: sideBlendFromSide(side),
     familyKey: (householdHead && idsByName.get(householdHead)) || idsByName.get(name)!,
   }));
 };

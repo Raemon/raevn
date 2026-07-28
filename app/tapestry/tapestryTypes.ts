@@ -8,6 +8,8 @@ export type TapestryPerson = {
   id: string;
   name: string;
   side: TapestrySide;
+  // 0 = Ray (maroon), 1 = Elizabeth (blue). Finer placement than `side`.
+  sideBlend: number;
   // Family parties share a familyKey (the primary registrant's id) so their
   // strands sit adjacent — one household reads as one cluster.
   familyKey: string;
@@ -25,5 +27,6 @@ export type TapestryEntrance = 'staggered' | 'single';
 // optimistic rows so the tapestry can place and caption them before Neon answers.
 export type InviteeTapestryHint = {
   side: string;
+  sideBlend?: number | null;
   diagramHovertext?: string | null;
 };

@@ -203,6 +203,22 @@ const InviteesTable = ({
             />
           </td>
         );
+      case 'sideBlend':
+        return (
+          <td key={columnId} className={`${adminTdClassName} w-20`}>
+            <EditableCell
+              value={String(row.sideBlend)}
+              className={adminMutedClassName}
+              onCommit={(nextValue) => {
+                const nextSideBlend = Number.parseFloat(nextValue);
+                if (!Number.isFinite(nextSideBlend) || nextSideBlend < 0 || nextSideBlend > 1) {
+                  return Promise.resolve(false);
+                }
+                return patchInviteeField(row.id, { sideBlend: nextSideBlend });
+              }}
+            />
+          </td>
+        );
       case 'name':
         return (
           <td key={columnId} className={adminTdClassName}>
