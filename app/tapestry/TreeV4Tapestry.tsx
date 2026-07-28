@@ -1,6 +1,6 @@
 import { line, curveCatmullRom } from 'd3-shape';
 import { playfair, cormorant } from '../handfasting-simple/save-the-date/handfastingInvitationTypography';
-import { pickThreadColor, truncateName } from './tapestryPalette';
+import { spectrumColorAt, spectrumStrandEdgeAt, truncateName } from './tapestryPalette';
 import { orderPersonsForTapestry } from './tapestryOrdering';
 import { createSeededRandom } from './tapestrySeededRandom';
 import {
@@ -59,19 +59,6 @@ const VIEW_BOTTOM = ROOT_Y + FRAME.bottomMargin;
 const SECTOR_START = rad(FRAME.sectorStartDeg);
 const SECTOR_END = rad(FRAME.sectorEndDeg);
 const REWEAVE_TRANSITION = `d ${MOTION.reweaveMs}ms ease`;
-
-const mixHex = (from: string, to: string, t: number) => {
-  const channel = (hex: string, offset: number) => parseInt(hex.slice(offset, offset + 2), 16);
-  const blended = [1, 3, 5].map((offset) =>
-    Math.round(lerp(channel(from, offset), channel(to, offset), t))
-      .toString(16)
-      .padStart(2, '0'),
-  );
-  return `#${blended.join('')}`;
-};
-
-// Rounded, so a hand-typed stop like 0.33 cannot emit float noise into the SVG.
-const percent = (fraction: number) => `${+(fraction * 100).toFixed(4)}%`;
 
 const smoothPath = line<Vec>()
   .x((p) => p.x)
@@ -178,7 +165,6 @@ const TreeV4Tapestry = ({
     const phase = createSeededRandom(`${slot.person.id}::tree4-phase`)() * Math.PI * 2;
     return {
       slot,
-      color: pickThreadColor(slot.person.side, slot.person.id),
       points: anchors
         ? buildStrandPath(anchors, {
             threadSpacing: THREADS.spacing,
@@ -362,6 +348,7 @@ const TreeV4Tapestry = ({
     crownReach * PALETTE.groundGlowFromCrown,
     trunkHeight * PALETTE.groundGlowFromTrunk,
   );
+  const spectrumHalfSpan = Math.max(crownReach, rootSpread, VIEW_W * 0.38);
 
   const cordRunLayer = (front: boolean) =>
     coupleCords.flatMap((cord) =>
@@ -430,10 +417,7 @@ const TreeV4Tapestry = ({
             />
             <stop offset="100%" stopColor={PALETTE.groundGlow} stopOpacity="0" />
           </radialGradient>
-          {/* Each thread is deep bark at the root, brightest through the boughs
-              where it runs with everyone else, then fades out along its final
-              spoke so the name at the end of it is the brightest thing there. */}
-          {strands.map(({ slot, color, points }) =>
+          {strands.map(({ slot, points }) =>
             points.length === 0 ? null : (
               <linearGradient
                 key={slot.person.id}
@@ -444,18 +428,23 @@ const TreeV4Tapestry = ({
                 x2={points[points.length - 1].x}
                 y2={points[points.length - 1].y}
               >
-                <stop offset="0%" stopColor={PALETTE.barkDeep} />
-                <stop offset={percent(PALETTE.barkStop)} stopColor={PALETTE.bark} />
+                <stop
+                  offset="0%"
+                  stopColor={spectrumStrandEdgeAt(points[0].x, CANOPY_X, spectrumHalfSpan, 'root')}
+                />
+                <stop offset="50%" stopColor={PALETTE.spectrumCenter} />
                 <stop
                   offset="100%"
-                  stopColor={mixHex(color, PALETTE.twigTip, PALETTE.twigFade)}
+                  stopColor={spectrumStrandEdgeAt(
+                    points[points.length - 1].x,
+                    CANOPY_X,
+                    spectrumHalfSpan,
+                    'tip',
+                  )}
                 />
               </linearGradient>
             ),
           )}
-          {/* A cord carries its owner's colour the whole way — darker under the
-              ground, full strength through the trunk, softening as it thins out
-              among their people. */}
           {coupleCords.map((cord) => (
             <linearGradient
               key={cord.key}
@@ -463,17 +452,17 @@ const TreeV4Tapestry = ({
               gradientUnits="userSpaceOnUse"
               x1={cord.root.x}
               y1={cord.root.y}
-              x2={CANOPY_X}
-              y2={canopyY - crownReach * PALETTE.cordGradientReach}
+              x2={cord.tip.x}
+              y2={cord.tip.y}
             >
               <stop
                 offset="0%"
-                stopColor={mixHex(cord.color, PALETTE.cordRootShade, PALETTE.cordRootMix)}
+                stopColor={spectrumStrandEdgeAt(cord.root.x, CANOPY_X, spectrumHalfSpan, 'root')}
               />
-              <stop offset={percent(PALETTE.cordFullStop)} stopColor={cord.color} />
+              <stop offset="50%" stopColor={PALETTE.spectrumCenter} />
               <stop
                 offset="100%"
-                stopColor={mixHex(cord.color, PALETTE.twigTip, PALETTE.cordTipMix)}
+                stopColor={spectrumStrandEdgeAt(cord.tip.x, CANOPY_X, spectrumHalfSpan, 'tip')}
               />
             </linearGradient>
           ))}
@@ -541,8 +530,9 @@ const TreeV4Tapestry = ({
             </g>
           ))}
 
-          {strands.map(({ slot, color, points }) => {
+          {strands.map(({ slot, points }) => {
             const leafPoint = polar(slot.theta, slot.radius);
+            const nameColor = spectrumColorAt(leafPoint.x, CANOPY_X, spectrumHalfSpan);
             const approach = points[points.length - LEAVES.angleLookback] ?? leafPoint;
             const leafAngle =
               (Math.atan2(leafPoint.y - approach.y, leafPoint.x - approach.x) * 180) / Math.PI;
@@ -571,7 +561,7 @@ const TreeV4Tapestry = ({
                 >
                   <path
                     d={leafOutline(leafLength, leafWidth)}
-                    fill={color}
+                    fill={nameColor}
                     fillOpacity={LEAVES.fillOpacity}
                     className="rvtree4-leaf"
                     style={{ animationDelay: fadeDelay }}
@@ -590,7 +580,7 @@ const TreeV4Tapestry = ({
                   y={labelY.get(slot.person.id) ?? labelPoint.y}
                   textAnchor={flip ? 'end' : 'start'}
                   fontSize={nameFontSize}
-                  fill={color}
+                  fill={nameColor}
                   fadeDelay={fadeDelay}
                   name={truncateName(slot.person.name, maxNameChars)}
                   hovertext={slot.person.hovertext}

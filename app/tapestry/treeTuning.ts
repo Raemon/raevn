@@ -268,8 +268,14 @@ export const PALETTE = {
   twigFade: 0.78,
   // Where along a thread it reaches full bark colour.
   barkStop: 0.32,
-  elizabeth: '#a9bbd1',
-  raymond: '#c9a45c',
+  elizabeth: '#8BBEF0',
+  raymond: '#B26069',
+  // Where blue and maroon meet in the middle of the tree — names and strands
+  // both lighten here as they cross the centre.
+  spectrumCenter: '#f5f0e8',
+  // How far strand ends are pulled dark at root and tip so names read brighter
+  // on top. Tip reuses twigFade; root mixes toward cordRootShade.
+  strandRootDarken: 0.55,
   // A cord carries its owner's colour the whole way — darker under the ground,
   // full strength through the trunk, softening as it thins out among their
   // people.

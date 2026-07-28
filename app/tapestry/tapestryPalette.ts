@@ -1,5 +1,37 @@
+import { PALETTE } from './treeTuning';
 import { createSeededRandom } from './tapestrySeededRandom';
 import type { TapestrySide } from './tapestryTypes';
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+const mixHex = (from: string, to: string, t: number) => {
+  const channel = (hex: string, offset: number) => parseInt(hex.slice(offset, offset + 2), 16);
+  const blended = [1, 3, 5].map((offset) =>
+    Math.round(lerp(channel(from, offset), channel(to, offset), t))
+      .toString(16)
+      .padStart(2, '0'),
+  );
+  return `#${blended.join('')}`;
+};
+
+// Blue on Elizabeth's side, maroon on Ray's, brightening to cream at the centre.
+export const spectrumColorAt = (x: number, centerX: number, halfSpan: number): string => {
+  const t = Math.min(1, Math.max(-1, (x - centerX) / halfSpan));
+  if (t <= 0) return mixHex(PALETTE.elizabeth, PALETTE.spectrumCenter, -t);
+  return mixHex(PALETTE.spectrumCenter, PALETTE.raymond, t);
+};
+
+// Darkened spectrum for strand ends — names stay at full spectrumColorAt.
+export const spectrumStrandEdgeAt = (
+  x: number,
+  centerX: number,
+  halfSpan: number,
+  edge: 'root' | 'tip',
+): string => {
+  const hue = spectrumColorAt(x, centerX, halfSpan);
+  if (edge === 'root') return mixHex(hue, PALETTE.cordRootShade, PALETTE.strandRootDarken);
+  return mixHex(hue, PALETTE.twigTip, PALETTE.twigFade);
+};
 
 // Moonlit silver for Elizabeth's people, maroon for Ray's, candle cream for
 // shared friends — all chosen to glow against the page's black ground. The
