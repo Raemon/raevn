@@ -1,5 +1,10 @@
 import type { Diet } from '@prisma/client';
 
+// The catalog requires every row to hold a diet, but the form starts with none
+// selected so the choice is always the guest's own. A row that gets recorded
+// before they pick carries this until they do.
+export const UNCHOSEN_DIET_FALLBACK: Diet = 'omnivore';
+
 // One attendee on the wire: the primary registrant or a family member.
 export type PartyMemberSubmission = {
   name: string;
@@ -23,11 +28,12 @@ export type PartyRegistrationPayload = {
 // Client-side editing state for one family row; draftKey is the React key only.
 // persistedId is the catalog row this draft is saving itself onto — null while
 // the guest is still typing a name nobody has been registered under yet.
+// diet is null until somebody actually picks one.
 export type FamilyMemberDraft = {
   draftKey: string;
   persistedId: string | null;
   name: string;
-  diet: Diet;
+  diet: Diet | null;
   isChildUnder2: boolean;
   needsHighChair: boolean;
 };

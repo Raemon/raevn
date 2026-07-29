@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { Diet } from '@prisma/client';
+import { UNCHOSEN_DIET_FALLBACK } from './partyRegistrationTypes';
 import type { FamilyMemberDraft, PartyRegistrationPayload } from './partyRegistrationTypes';
 import {
   discardFamilyMemberDraft,
@@ -14,7 +15,8 @@ import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH, MAX_GUEST_NOTE_LENGTH } from
 // assembles the wire payload with the same trim/drop-empties rules the server applies.
 
 export const usePartyRegistrationDraft = (inviteToken?: string) => {
-  const [primaryDiet, setPrimaryDiet] = useState<Diet>('omnivore');
+  // null until the guest picks: the form opens with no diet selected.
+  const [primaryDiet, setPrimaryDiet] = useState<Diet | null>(null);
   const [familyDrafts, setFamilyDrafts] = useState<FamilyMemberDraft[]>([]);
   const [noteDraft, setNoteDraft] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +52,7 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
     const trimmedNote = noteDraft.trim().slice(0, MAX_GUEST_NOTE_LENGTH);
     return {
       name: enteredNameTrimmed.slice(0, MAX_GUEST_NAME_LENGTH),
-      diet: primaryDiet,
+      diet: primaryDiet ?? UNCHOSEN_DIET_FALLBACK,
       rsvp: isAttending,
       ...(trimmedNote !== '' ? { note: trimmedNote } : {}),
       ...(inviteToken ? { inviteToken } : {}),
@@ -59,7 +61,7 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
         ? familyDrafts
             .map((draft) => ({
               name: draft.name.trim().slice(0, MAX_GUEST_NAME_LENGTH),
-              diet: draft.diet,
+              diet: draft.diet ?? UNCHOSEN_DIET_FALLBACK,
               isChildUnder2: draft.isChildUnder2,
               needsHighChair: draft.needsHighChair,
             }))
@@ -89,7 +91,7 @@ export const usePartyRegistrationDraft = (inviteToken?: string) => {
   }, []);
 
   const resetPartyDraft = (): void => {
-    setPrimaryDiet('omnivore');
+    setPrimaryDiet(null);
     setFamilyDrafts([]);
     setNoteDraft('');
   };

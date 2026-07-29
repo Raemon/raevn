@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Diet } from '@prisma/client';
+import { UNCHOSEN_DIET_FALLBACK } from './partyRegistrationTypes';
 import type { FamilyMemberDraft } from './partyRegistrationTypes';
 import { addFamilyMemberToOwnRegistration, reviseOwnGuestRow } from './reviseOwnGuestRow';
 
@@ -25,10 +26,11 @@ const describeFamilyDraft = (draft: FamilyMemberDraft) => ({
 });
 
 // A decline eats nothing, so it has nothing on the primary row to keep in
-// sync. The note is not here on purpose: it is a piece of writing, and it
-// saves when its author says so.
-const describePrimary = (isAttending: boolean, diet: Diet): string | null =>
-  isAttending ? JSON.stringify({ diet }) : null;
+// sync — and neither does a diet nobody has picked yet, which stays null until
+// the guest chooses. The note is not here on purpose: it is a piece of
+// writing, and it saves when its author says so.
+const describePrimary = (isAttending: boolean, diet: Diet | null): string | null =>
+  isAttending && diet !== null ? JSON.stringify({ diet }) : null;
 
 export const useRecordedPartyAutosave = ({
   recordedGuestId,
@@ -39,7 +41,7 @@ export const useRecordedPartyAutosave = ({
 }: {
   recordedGuestId: string | null;
   isAttending: boolean;
-  diet: Diet;
+  diet: Diet | null;
   familyDrafts: FamilyMemberDraft[];
   markFamilyDraftPersisted: (draftKey: string, persistedId: string) => void;
 }) => {
@@ -96,12 +98,14 @@ export const useRecordedPartyAutosave = ({
     const autosaveTimer = setTimeout(async () => {
       setStatus('saving');
       try {
-        if (isPrimaryDirty) {
+        if (isPrimaryDirty && diet !== null) {
           await reviseOwnGuestRow(recordedGuestId, { diet });
           savedPrimaryRef.current = primarySnapshot;
         }
         for (const { draft, snapshot } of dirtyFamily) {
-          const member = describeFamilyDraft(draft);
+          // The snapshot keeps the null so a later pick still reads as a
+          // change, but the catalog row itself always needs a diet.
+          const member = { ...describeFamilyDraft(draft), diet: draft.diet ?? UNCHOSEN_DIET_FALLBACK };
           if (draft.persistedId) {
             await reviseOwnGuestRow(draft.persistedId, member);
             savedFamilyRef.current.set(draft.persistedId, snapshot);

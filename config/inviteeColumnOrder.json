@@ -2,6 +2,7 @@
   "columns": [
     "sortOrder",
     "side",
+    "sideBlend",
     "name",
     "email",
     "diagramHovertext",
@@ -9,6 +10,7 @@
     "sentAt",
     "note",
     "link",
-    "send"
+    "send",
+    "partyLink"
   ]
 }

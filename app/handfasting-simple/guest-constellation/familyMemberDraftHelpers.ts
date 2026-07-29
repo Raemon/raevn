@@ -4,7 +4,7 @@ export const mintEmptyFamilyMemberDraft = (): FamilyMemberDraft => ({
   draftKey: crypto.randomUUID(),
   persistedId: null,
   name: '',
-  diet: 'omnivore',
+  diet: null,
   isChildUnder2: false,
   needsHighChair: false,
 });

@@ -95,8 +95,8 @@ export const LEAVES = {
   widthRatio: 0.34,
   // Where along the leaf its widest point sits, as a fraction of its length.
   bellyAlong: 0.45,
-  fillOpacity: 0.88,
-  coupleFillOpacity: 0.92,
+  fillOpacity: 0.8,
+  coupleFillOpacity: 0.84,
   // The single stitch down the middle, as fractions of the leaf's length.
   veinFrom: 0.1,
   veinTo: 0.9,
@@ -291,6 +291,9 @@ export const PALETTE = {
   // full strength through the trunk, softening as it thins out among their
   // people.
   cordRootShade: '#2a2118',
+  // How far a leaf's fill is pulled toward cordRootShade, so leaves read
+  // darker than the name and thread colour they're mixed from.
+  leafDarken: 0.22,
   cordRootMix: 0.62,
   cordFullStop: 0.38,
   cordTipMix: 0.45,

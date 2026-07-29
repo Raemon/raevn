@@ -41,6 +41,11 @@ export const spectrumStrandEdgeAt = (
   return mixHex(hue, PALETTE.twigTip, PALETTE.twigFade);
 };
 
+// Leaves read a shade darker than their own name — mixed toward the same
+// dark shade cord roots use, short of the strand-tip darkening.
+export const leafFillColorFor = (color: string): string =>
+  mixHex(color, PALETTE.cordRootShade, PALETTE.leafDarken);
+
 // Where a strand passes through the trunk. It used to pass through pure cream,
 // which painted the trunk white however its two halves were coloured.
 export const spectrumStrandMidAt = (x: number, centerX: number, halfSpan: number): string =>

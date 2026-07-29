@@ -3,6 +3,7 @@ import { playfair, cormorant } from '../handfasting-simple/save-the-date/handfas
 import {
   cordRootColorFor,
   cordTipColorFor,
+  leafFillColorFor,
   spectrumColorAt,
   spectrumStrandEdgeAt,
   spectrumStrandMidAt,
@@ -521,7 +522,7 @@ const TreeV4Tapestry = ({
             >
               <path
                 d={leafOutline(leafLength, leafWidth)}
-                fill={cord.color}
+                fill={leafFillColorFor(cord.color)}
                 fillOpacity={LEAVES.coupleFillOpacity}
                 className="rvtree4-leaf"
                 style={{ animationDelay: `${threadDrawSeconds}s` }}
@@ -560,7 +561,7 @@ const TreeV4Tapestry = ({
                 >
                   <path
                     d={leafOutline(leafLength, leafWidth)}
-                    fill={nameColor}
+                    fill={leafFillColorFor(nameColor)}
                     fillOpacity={LEAVES.fillOpacity}
                     className="rvtree4-leaf"
                     style={{ animationDelay: fadeDelay }}

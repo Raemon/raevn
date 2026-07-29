@@ -12,15 +12,16 @@ const DIET_CHOICES: { diet: Diet; label: string }[] = [
   { diet: 'omnivore', label: 'Omnivore' },
 ];
 
-// Exactly one diet per guest, so these are radios; hovering (or keyboard-
-// focusing) a choice previews that diet's dishes from the admin menu.
+// Exactly one diet per guest, so these are radios — but none starts checked:
+// diet is null until the guest picks. Hovering (or keyboard-focusing) a choice
+// previews that diet's dishes from the admin menu.
 
 const DietChoiceTrio = ({
   diet,
   onDietChange,
   menuOptions,
 }: {
-  diet: Diet;
+  diet: Diet | null;
   onDietChange: (diet: Diet) => void;
   menuOptions: MenuOptionPreview[];
 }) => {
