@@ -225,6 +225,33 @@ const TreeV4Tapestry = ({
     }
   });
 
+  // Where each name sits and how much of it fits — shared by the render below
+  // and by the phone framing, which needs to know how wide the tree really is.
+  const labelLayout = new Map(
+    slots.map((slot) => {
+      const labelPoint = polar(slot.theta, slot.radius + labelGap);
+      const flip = Math.cos(slot.theta) < 0;
+      // Horizontal labels run straight out to the frame's edge from
+      // wherever the leaf sits, so the room left is the distance to it.
+      const roomPx = flip
+        ? labelPoint.x - LABELS.edgeMargin
+        : VIEW_W - LABELS.edgeMargin - labelPoint.x;
+      const maxNameChars = Math.max(
+        LABELS.minChars,
+        Math.min(
+          LABELS.maxChars,
+          Math.floor(roomPx / (nameFontSize * LABELS.truncateCharWidthRatio)),
+        ),
+      );
+      const shownName = truncateName(slot.person.name, maxNameChars);
+      const nameWidth = shownName.length * nameFontSize * LABELS.truncateCharWidthRatio;
+      return [
+        slot.person.id,
+        { labelPoint, flip, shownName, outerX: flip ? labelPoint.x - nameWidth : labelPoint.x + nameWidth },
+      ] as const;
+    }),
+  );
+
   // The couple's own two cords. Each one arcs up out of its owner's root
   // cluster — the same tip their own people's threads spring from, so the cord
   // reads as the thick parent root of that fan — meets the other at the collar,
@@ -345,6 +372,22 @@ const TreeV4Tapestry = ({
   const viewTop = contentTopY - nameFontSize * FRAME.topMarginLines;
   const viewBox = `0 ${viewTop} ${VIEW_W} ${VIEW_BOTTOM - viewTop}`;
 
+  // The phone framing: how much wider the frame is than what actually needs
+  // showing — the farthest-reaching name or cord tip, or the signature floor.
+  // On screens narrower than FRAME.phoneMaxWidthPx the drawing is rendered this
+  // many times the screen's width and centred, so the tree itself spans the
+  // screen and only the frame's blank sides fall away.
+  const contentHalfWidth = Math.max(
+    ...slots.map((slot) => Math.abs((labelLayout.get(slot.person.id)?.outerX ?? CANOPY_X) - CANOPY_X)),
+    ...coupleCords.map((cord) => Math.abs(cord.tip.x - CANOPY_X) + leafLength),
+    rootSpread,
+  );
+  const visibleHalfWidth = Math.min(
+    VIEW_W / 2,
+    Math.max(FRAME.phoneMinHalfWidth, contentHalfWidth + FRAME.phoneSideMargin),
+  );
+  const phoneOverscan = VIEW_W / (2 * visibleHalfWidth);
+
   const glowRadius = Math.max(
     crownReach * PALETTE.groundGlowFromCrown,
     trunkHeight * PALETTE.groundGlowFromTrunk,
@@ -367,8 +410,14 @@ const TreeV4Tapestry = ({
     );
 
   return (
-    <div className="relative mx-auto w-full max-w-none select-none" aria-label="Tree of confirmed guests">
+    <div
+      className="relative mx-auto flex w-full max-w-none justify-center overflow-hidden select-none"
+      aria-label="Tree of confirmed guests"
+    >
       <style>{`
+        @media (max-width: ${FRAME.phoneMaxWidthPx}px) {
+          .rvtree4-svg { width: ${(phoneOverscan * 100).toFixed(1)}%; max-width: none; flex: none; }
+        }
         .rvtree4-thread {
           stroke-dasharray: 1;
           stroke-dashoffset: 1;
@@ -405,7 +454,7 @@ const TreeV4Tapestry = ({
           scales down and centres rather than being cropped. */}
       <svg
         viewBox={viewBox}
-        className="mx-auto block h-auto w-full"
+        className="rvtree4-svg mx-auto block h-auto w-full"
         style={{ maxHeight: `${FRAME.maxHeightVh}vh` }}
         role="img"
       >
@@ -536,20 +585,7 @@ const TreeV4Tapestry = ({
             const approach = points[points.length - LEAVES.angleLookback] ?? leafPoint;
             const leafAngle =
               (Math.atan2(leafPoint.y - approach.y, leafPoint.x - approach.x) * 180) / Math.PI;
-            const flip = Math.cos(slot.theta) < 0;
-            const labelPoint = polar(slot.theta, slot.radius + labelGap);
-            // Horizontal labels run straight out to the frame's edge from
-            // wherever the leaf sits, so the room left is the distance to it.
-            const roomPx = flip
-              ? labelPoint.x - LABELS.edgeMargin
-              : VIEW_W - LABELS.edgeMargin - labelPoint.x;
-            const maxNameChars = Math.max(
-              LABELS.minChars,
-              Math.min(
-                LABELS.maxChars,
-                Math.floor(roomPx / (nameFontSize * LABELS.truncateCharWidthRatio)),
-              ),
-            );
+            const { labelPoint, flip, shownName } = labelLayout.get(slot.person.id)!;
             // The leaf and its name wait for their own branch to finish
             // arriving, so nothing ever buds on wood that is still growing.
             const fadeDelay = `${leafDelayFor(slot.slotIndex).toFixed(2)}s`;
@@ -582,7 +618,7 @@ const TreeV4Tapestry = ({
                   fontSize={nameFontSize}
                   fill={nameColor}
                   fadeDelay={fadeDelay}
-                  name={truncateName(slot.person.name, maxNameChars)}
+                  name={shownName}
                   hovertext={slot.person.hovertext}
                   forceTooltipOpen={slot.person.id === celebratePersonId && !!slot.person.hovertext}
                 />
