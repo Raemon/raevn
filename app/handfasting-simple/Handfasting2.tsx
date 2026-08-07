@@ -76,9 +76,12 @@ const Handfasting2 = ({
         style={{ opacity: openingPictureOpacity }}
       />
       <div className="relative z-10 box-border flex min-h-svh flex-col items-center justify-center text-center gap-16 text-center w-full">
-        <div className="flex flex-col items-center">
+        {/* px-6 keeps the title and subtitle off the screen edges on phones;
+            the 500px drop shrinks with the viewport so short screens still
+            land the title on the photo's dark silhouette half. */}
+        <div className="flex flex-col items-center px-6">
           <h1
-            className={`${playfair.className} mt-[500px] text-4xl md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#f1ece0] mb-4`}
+            className={`${playfair.className} mt-[min(500px,60svh)] text-[clamp(1.9rem,9.2vw,2.25rem)] md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#f1ece0] mb-4`}
           >
             <span className="text-10xl">10</span> Years <span className=" italic text-[.75em] align-middle mx-1">&amp;</span> <span className="text-10xl">10</span> Days
           </h1>
