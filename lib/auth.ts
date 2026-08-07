@@ -18,7 +18,7 @@ export const ADMIN_COOKIE = 'raevn_admin';
 export const VIEWER_TTL_DAYS = 180;
 export const ADMIN_TTL_DAYS = 30;
 
-const getSecret = (): string => {
+export const getSecret = (): string => {
   const secret = process.env.AUTH_SECRET;
   if (!secret) throw new Error('AUTH_SECRET is not set — generate 32 random bytes (hex) and set it in the environment.');
   return secret;
@@ -27,7 +27,7 @@ const getSecret = (): string => {
 const sign = (payload: string): string =>
   createHmac('sha256', getSecret()).update(payload).digest('hex');
 
-const safeEqual = (a: string, b: string): boolean => {
+export const safeEqual = (a: string, b: string): boolean => {
   const bufferA = Buffer.from(a);
   const bufferB = Buffer.from(b);
   return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);

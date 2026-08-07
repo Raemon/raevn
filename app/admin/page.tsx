@@ -6,6 +6,7 @@ import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
 import { getInvitationEmails } from '@/lib/invitationEmail';
 import { getTaglineHovertext } from '@/lib/taglineHovertext';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
+import { pocketKey } from '@/lib/pocketAccess';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
 import { loadAdminRows } from './loadAdminRows';
 import AdminTabs from './AdminTabs';
@@ -46,6 +47,7 @@ export default async function AdminPage() {
     headerList.get('x-forwarded-proto') ??
     (host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https');
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `${protocol}://${host}`;
+  const lanternUrl = `${baseUrl}/lantern/${pocketKey()}`;
 
   return (
     <main className={`${adminFont.className} min-h-svh bg-[#faf8f4] pb-24 text-[#1f1c18]`}>
@@ -142,7 +144,17 @@ export default async function AdminPage() {
         </AdminRowsProvider>
 
         <footer className="border-t border-[#ddd6c8] pt-5 text-center text-base text-[#6f6a61]">
-          seeded from guestlist.json via scripts/seed-invitees.mjs — invite tokens mint on seed
+          <p className="m-0">
+            seeded from guestlist.json via scripts/seed-invitees.mjs — invite tokens mint on seed
+          </p>
+          {/* The phone editor has no login screen, so this is the only place the
+              link is ever written down. Only a signed-in admin sees it. */}
+          <p className="mt-2 break-all text-sm">
+            hover notes on your phone:{' '}
+            <a className="text-[#7a5a1c] underline" href={lanternUrl}>
+              {lanternUrl}
+            </a>
+          </p>
         </footer>
       </div>
     </main>
