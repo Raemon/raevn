@@ -5,7 +5,7 @@ import { withAdmin } from '@/lib/auth';
 
 // Partial update of host-editable guest fields from admin table cell edits.
 
-const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan']);
+const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan', 'none']);
 
 type GuestPatch = {
   name?: string;

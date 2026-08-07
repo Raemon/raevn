@@ -6,13 +6,13 @@ import {
   MAX_GUEST_NOTE_LENGTH,
 } from '@/app/handfasting-simple/guest-constellation/partyLimits';
 
-const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan']);
+const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan', 'none']);
 
 const sanitizeName = (candidate: unknown): string =>
   typeof candidate === 'string' ? candidate.trim().slice(0, MAX_GUEST_NAME_LENGTH) : '';
 
 const sanitizeDiet = (candidate: unknown): Diet =>
-  typeof candidate === 'string' && DIET_ALLOWLIST.has(candidate) ? (candidate as Diet) : 'omnivore';
+  typeof candidate === 'string' && DIET_ALLOWLIST.has(candidate) ? (candidate as Diet) : 'none';
 
 const sanitizeNote = (candidate: unknown): string =>
   typeof candidate === 'string' ? candidate.trim().slice(0, MAX_GUEST_NOTE_LENGTH) : '';

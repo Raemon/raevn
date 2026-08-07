@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { isAdmin } from '@/lib/auth';
 import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
 import { getInvitationEmails } from '@/lib/invitationEmail';
+import { getTaglineHovertext } from '@/lib/taglineHovertext';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
 import { loadAdminRows } from './loadAdminRows';
@@ -11,6 +12,7 @@ import AdminTabs from './AdminTabs';
 import AwaitingReplyTable, { AwaitingReplyCount } from './AwaitingReplyTable';
 import DefaultInvitationEditor from './DefaultInvitationEditor';
 import InvitationEmailEditor from './InvitationEmailEditor';
+import TaglineHovertextEditor from './TaglineHovertextEditor';
 import GuestsTable from './GuestsTable';
 import InviteesTable from './InviteesTable';
 import MenuOptionsTable from './MenuOptionsTable';
@@ -30,11 +32,12 @@ export const metadata = {
 export default async function AdminPage() {
   if (!(await isAdmin())) redirect('/admin/login');
 
-  const [rows, defaultInvitationHtml, emails, inviteeColumnOrder] = await Promise.all([
+  const [rows, defaultInvitationHtml, emails, inviteeColumnOrder, taglineHovertext] = await Promise.all([
     loadAdminRows(),
     getDefaultInvitationHtml(),
     getInvitationEmails(),
     readInviteeColumnOrder(),
+    getTaglineHovertext(),
   ]);
 
   const headerList = await headers();
@@ -102,6 +105,15 @@ export default async function AdminPage() {
                         personal letter.
                       </p>
                       <DefaultInvitationEditor initialHtml={defaultInvitationHtml} />
+                    </section>
+
+                    <section className="mb-14">
+                      <h2 className="mb-1 text-3xl font-semibold">Tagline hovertext</h2>
+                      <p className="mb-4 text-base text-[#6f6a61]">
+                        The note behind the dashed phrase in the invite page&rsquo;s subtitle —
+                        guests see it when they hover or tab to it.
+                      </p>
+                      <TaglineHovertextEditor initialHovertext={taglineHovertext} />
                     </section>
 
                     <section className="mb-14">

@@ -51,3 +51,24 @@ export const hovertextIssues = (row: InviteeAdminRow): string[] => {
 
   return issues;
 };
+
+// A blend near the middle belongs to both of us, so the hovertext should carry
+// both signatures. That's a weaker complaint than the rules above — the text
+// isn't wrong, it's half-written — so it gets its own colour and sits below the
+// red rows rather than mixed in with them.
+const SHARED_BLEND_MIN = 0.4;
+const SHARED_BLEND_MAX = 0.6;
+
+export const sharedSignoffWarnings = (row: InviteeAdminRow): string[] => {
+  const text = row.diagramHovertext?.trim() ?? '';
+  if (text === '') return [];
+  if (row.sideBlend < SHARED_BLEND_MIN || row.sideBlend > SHARED_BLEND_MAX) return [];
+
+  const missing = [
+    RAY_SIGNATURE.test(text) ? null : '“– Ray”',
+    ELIZABETH_SIGNATURE.test(text) ? null : '“– Elizabeth”',
+  ].filter((signature): signature is string => signature !== null);
+
+  if (missing.length === 0) return [];
+  return [`Side blend ${row.sideBlend} (both sides) but no ${missing.join(' or ')}`];
+};

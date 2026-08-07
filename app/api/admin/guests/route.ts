@@ -9,7 +9,7 @@ export const POST = withAdmin(async (request: Request) => {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const name = typeof body.name === 'string' && body.name.trim() !== '' ? body.name.trim() : 'New guest';
   const guest = await prisma.guest
-    .create({ data: { name, diet: 'omnivore', meaningful: false, plusOne: '', rsvp: null } })
+    .create({ data: { name, diet: 'none', meaningful: false, plusOne: '', rsvp: null } })
     .catch(() => null);
   if (!guest) {
     return NextResponse.json({ error: 'Could not create a guest' }, { status: 409 });

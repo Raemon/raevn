@@ -12,6 +12,7 @@ import { readOwnRegistration, rememberRecordedGuestId, reviseOwnGuestRow } from 
 import { PANEL_CARD_CLASS_NAME } from './panelCard';
 import DietChoiceTrio from './DietChoiceTrio';
 import FamilyMemberRow from './FamilyMemberRow';
+import RsvpGratitude from './RsvpGratitude';
 
 // The RSVP panel. Nobody types their name here: the page is behind an invite
 // link, so we already know whose answer this is, and the letter above has
@@ -84,6 +85,17 @@ const GuestNameEntry = ({
   const shownContentRef = useRef(false);
   const isShowingAttending = isRsvpExpanded ? isAcceptingIntent : shownContentRef.current;
   if (isRsvpExpanded) shownContentRef.current = isShowingAttending;
+
+  // The thank-you belongs to an answer we actually hold, so it waits for the
+  // row rather than appearing on the click and taking itself back when the
+  // write fails. Switching answers retires the old row before writing the new
+  // one, though, and the thank-you must not blink out in that gap: while an
+  // answer is in flight it stays as long as it was already there. (Same
+  // written-during-render idiom as above, and for the same reason.)
+  const wasThankingRef = useRef(false);
+  const isThanking =
+    rsvpIntent !== null && (recordedRsvp !== null || (partyDraft.isSubmitting && wasThankingRef.current));
+  wasThankingRef.current = isThanking;
 
   // A reloaded page reopens on whatever this invitation last answered, drafts
   // and all, rather than on a blank pair of buttons. A guest who answers before
@@ -330,7 +342,7 @@ const GuestNameEntry = ({
               // so nothing below it would be editing anything.
               <div className={PANEL_CARD_CLASS_NAME}>
                 <p aria-live="polite" className={quietNoteClassName}>
-                  That did not reach us — click the same button again to try once more.
+                  Hmm, that didn't work for some reason. If it doesn't work on the next try, send us a message about our site being broke.
                 </p>
               </div>
             ) : (
@@ -394,6 +406,8 @@ const GuestNameEntry = ({
           </div>
         </div>
       </div>
+      {/* Under the whole panel, and so above the tree on the page. */}
+      {isThanking && <RsvpGratitude />}
     </div>
   );
 };

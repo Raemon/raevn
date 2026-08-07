@@ -11,6 +11,9 @@ enum Diet {
   omnivore
   vegetarian
   vegan
+  // Nobody has picked yet: what a guest row carries until they choose. Only
+  // ever a guest's diet, never a dish's.
+  none
 }
 
 model Guest {

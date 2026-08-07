@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getViewerInviteeId, isAdmin } from '@/lib/auth';
 import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
+import { getTaglineHovertext } from '@/lib/taglineHovertext';
 import Handfasting2 from './handfasting-simple/Handfasting2';
 import { cinzel, cormorant, playfair } from './handfasting-simple/save-the-date/handfastingInvitationTypography';
 
@@ -60,6 +61,7 @@ const LockedShell = () => (
 
 export default async function Page() {
   const inviteeId = await getViewerInviteeId();
+  const taglineHovertext = await getTaglineHovertext();
   // A cookie for a since-deleted invitee falls through to the locked shell —
   // deleting the row on /admin is how a link (and its cookie) gets revoked.
   const invitee = inviteeId
@@ -67,12 +69,13 @@ export default async function Page() {
     : null;
   if (!invitee) {
     // The two of us can see the full page without an invite link.
-    if (await isAdmin()) return <Handfasting2 />;
+    if (await isAdmin()) return <Handfasting2 taglineHovertext={taglineHovertext} />;
     return <LockedShell />;
   }
   const invitationHtml = invitee.invitationHtml ?? (await getDefaultInvitationHtml());
   return (
     <Handfasting2
+      taglineHovertext={taglineHovertext}
       personalization={{
         inviteeName: invitee.name,
         inviteToken: invitee.inviteToken ?? '',

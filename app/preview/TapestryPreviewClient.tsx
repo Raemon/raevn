@@ -30,9 +30,11 @@ const buildArrivalSequence = (persons: TapestryPerson[]): TapestryPerson[][] => 
 const TapestryPreviewClient = ({
   persons,
   usingSampleData,
+  taglineHovertext,
 }: {
   persons: TapestryPerson[];
   usingSampleData: boolean;
+  taglineHovertext: string;
 }) => {
   const parties = useMemo(() => buildArrivalSequence(persons), [persons]);
   const [arrivedParties, setArrivedParties] = useState(0);
@@ -58,6 +60,7 @@ const TapestryPreviewClient = ({
   return (
     <>
       <Handfasting2
+        taglineHovertext={taglineHovertext}
         tapestrySection={
           /* entrance="single": only the newly arrived strands animate in;
              everyone already woven just gently shifts to make room. */

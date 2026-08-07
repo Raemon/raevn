@@ -17,7 +17,7 @@ import DeleteRowButton from './DeleteRowButton';
 import DryRunPanel from './DryRunPanel';
 import EditableCell from './EditableCell';
 import GuestPartyLinkSelect from './GuestPartyLinkSelect';
-import { hovertextIssues } from './hovertextIssues';
+import { hovertextIssues, sharedSignoffWarnings } from './hovertextIssues';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
 import { formatSideBlend } from '@/lib/sideBlend';
@@ -66,14 +66,16 @@ const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // The default view is a to-do list — whatever still needs a pass comes first,
 // in the order we'd do the work: chase down an address, write the missing
-// hovertexts, then fix the ones hovertextIssues flags as wrong. Everything
-// finished sits below, still in hand-arranged order.
+// hovertexts, then fix the ones hovertextIssues flags as wrong, then collect the
+// second signature on the middle-blend ones. Everything finished sits below,
+// still in hand-arranged order.
 const attentionRank = (row: InviteeAdminRow, duplicateEmails: Set<string>): number => {
   if (!LOOKS_LIKE_EMAIL.test(row.email?.trim() ?? '')) return 0;
   if (duplicateEmails.has(normalizedEmail(row))) return 1;
   if ((row.diagramHovertext?.trim() ?? '') === '') return 2;
   if (hovertextIssues(row).length > 0) return 3;
-  return 4;
+  if (sharedSignoffWarnings(row).length > 0) return 4;
+  return 5;
 };
 
 // Every comparator falls back to the hand-arranged order, so rows that tie on
@@ -398,14 +400,18 @@ const InviteesTable = ({
       case 'diagramHovertext': {
         // Unsigned, mid-text line breaks, or a signature from the wrong side:
         // all read as "this one still needs a pass", so they share one colour.
+        // A middle blend still waiting on its second signature is orange: worth
+        // coming back to, but not the same kind of wrong.
         const issues = hovertextIssues(row);
+        const warnings = issues.length > 0 ? [] : sharedSignoffWarnings(row);
+        const flags = issues.length > 0 ? issues : warnings;
         return (
           <td key={columnId} className={`${adminTdClassName} max-w-56 text-sm ${adminMutedClassName}`}>
             <EditableCell
               value={row.diagramHovertext ?? ''}
               placeholder=""
-              className={issues.length > 0 ? 'text-[#b02020]' : ''}
-              title={issues.length > 0 ? issues.join(' · ') : undefined}
+              className={issues.length > 0 ? 'text-[#b02020]' : warnings.length > 0 ? 'text-[#c2701c]' : ''}
+              title={flags.length > 0 ? flags.join(' · ') : undefined}
               onCommit={(nextValue) =>
                 patchInviteeField(row.id, {
                   diagramHovertext: nextValue.trim() === '' ? null : nextValue,

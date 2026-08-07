@@ -8,6 +8,8 @@ import { useGuestConstellation } from './guest-constellation/useGuestConstellati
 import SaveTheDateHeroAnnouncement from './save-the-date/SaveTheDateHeroAnnouncement';
 import SaveTheDateFooter from './save-the-date/SaveTheDateFooter';
 import { cormorant, playfair } from './save-the-date/handfastingInvitationTypography';
+import TaglineHovertext from './TaglineHovertext';
+import { DEFAULT_TAGLINE_HOVERTEXT } from '@/lib/taglineHovertextDefault';
 
 // Present when the page was reached through a tokenized invite link.
 export type PersonalizedInvitation = {
@@ -22,8 +24,11 @@ export type PersonalizedInvitation = {
 const Handfasting2 = ({
   personalization,
   tapestrySection,
+  taglineHovertext,
 }: {
   personalization?: PersonalizedInvitation;
+  // The hosts' note behind the dashed phrase in the subtitle, from /admin.
+  taglineHovertext?: string | null;
   // /preview renders this very page and swaps in its own tapestry — the one
   // that plays the invite list arriving — so the surface around it stays the
   // real thing rather than a lookalike that can drift.
@@ -80,7 +85,11 @@ const Handfasting2 = ({
           <h3
             className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#cbc4b3]`}
           >
-            Round 2 of an iterated exponential kickstarter of love.
+            Round 2 of an{' '}
+            <TaglineHovertext hovertext={taglineHovertext ?? DEFAULT_TAGLINE_HOVERTEXT}>
+              iterated superlinear kickstarter of love
+            </TaglineHovertext>
+            .
           </h3>
         </div>
         {personalization && (

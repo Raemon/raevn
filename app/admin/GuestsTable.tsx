@@ -154,7 +154,7 @@ const GuestsTable = () => {
                     value={row.diet}
                     onCommit={(nextValue) => {
                       const nextDiet = nextValue.trim().toLowerCase();
-                      if (!['omnivore', 'vegetarian', 'vegan'].includes(nextDiet)) return Promise.resolve(false);
+                      if (!['omnivore', 'vegetarian', 'vegan', 'none'].includes(nextDiet)) return Promise.resolve(false);
                       return patchGuestField(row.id, { diet: nextDiet as GuestAdminRow['diet'] });
                     }}
                   />

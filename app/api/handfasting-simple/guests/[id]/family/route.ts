@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 // arrive with the initial POST; now that an RSVP is recorded on the click
 // itself, anyone added afterwards comes through here instead.
 
-const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan']);
+const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan', 'none']);
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const familyRow = await prisma.guest.create({
     data: {
       name,
-      diet: typeof body?.diet === 'string' && DIET_ALLOWLIST.has(body.diet) ? (body.diet as Diet) : 'omnivore',
+      diet: typeof body?.diet === 'string' && DIET_ALLOWLIST.has(body.diet) ? (body.diet as Diet) : 'none',
       isChildUnder2: body?.isChildUnder2 === true,
       needsHighChair: body?.needsHighChair === true,
       rsvp: primary.rsvp,

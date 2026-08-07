@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 // their diet, their note, a family member's details — arrives here as an
 // update rather than as a second, contradictory row.
 
-const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan']);
+const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan', 'none']);
 
 type GuestRevisionBody = {
   note?: unknown;

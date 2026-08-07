@@ -2,8 +2,9 @@ import type { Diet } from '@prisma/client';
 
 // The catalog requires every row to hold a diet, but the form starts with none
 // selected so the choice is always the guest's own. A row that gets recorded
-// before they pick carries this until they do.
-export const UNCHOSEN_DIET_FALLBACK: Diet = 'omnivore';
+// before they pick carries this until they do — 'none' rather than a real diet,
+// so an unanswered row never reads as a headcount for a meal nobody asked for.
+export const UNCHOSEN_DIET_FALLBACK: Diet = 'none';
 
 // One attendee on the wire: the primary registrant or a family member.
 export type PartyMemberSubmission = {
