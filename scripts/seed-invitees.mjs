@@ -25,22 +25,35 @@ try {
 
 const prisma = new PrismaClient();
 
-let upserted = 0;
+// guestlist.json is the source for *new* rows only. Once a row exists, the
+// admin ledger is authoritative: sortOrder gets hand-arranged there, sideBlend
+// hand-tuned away from the 0/0.5/1 the side implies (and the hovertext
+// signature checks read that blend), and emails and notes get corrected in
+// place. Re-running this used to overwrite all four from a file that is often
+// months stale — silently undoing an evening's work.
+let created = 0;
+let existing = 0;
 for (const [i, row] of rows.entries()) {
-  const data = {
-    side: row.side,
-    sideBlend: sideBlendFromSide(row.side),
-    name: row.name,
-    email: row.email ?? null,
-    note: row.note ?? null,
-    sortOrder: i,
-  };
-  await prisma.invitee.upsert({
+  const found = await prisma.invitee.findUnique({
     where: { side_name: { side: row.side, name: row.name } },
-    create: { ...data, inviteToken: randomBytes(16).toString('hex') },
-    update: data,
+    select: { id: true },
   });
-  upserted++;
+  if (found) {
+    existing++;
+    continue;
+  }
+  await prisma.invitee.create({
+    data: {
+      side: row.side,
+      sideBlend: sideBlendFromSide(row.side),
+      name: row.name,
+      email: row.email ?? null,
+      note: row.note ?? null,
+      sortOrder: i,
+      inviteToken: randomBytes(16).toString('hex'),
+    },
+  });
+  created++;
 }
 
 // Backfill invite tokens for rows that predate the tokenized-link feature.
@@ -55,5 +68,7 @@ if (stale > 0) {
   console.warn(`Note: ${stale} invitee(s) in the DB are not in guestlist.json (renamed or removed rows). Clean up manually if intended.`);
 }
 
-console.log(`Upserted ${upserted} invitees.`);
+console.log(
+  `Created ${created} invitee(s); left ${existing} existing row(s) untouched — edit those on /admin, not in guestlist.json.`,
+);
 await prisma.$disconnect();

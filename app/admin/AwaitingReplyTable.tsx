@@ -20,7 +20,13 @@ import SendInvitationButton from './SendInvitationButton';
 
 const AWAITING_REPLY_COLUMNS = ['name', 'email', 'sent', 'party', 'link', 'nudge'] as const;
 
-const AwaitingReplyTable = ({ baseUrl }: { baseUrl: string }) => {
+const AwaitingReplyTable = ({
+  baseUrl,
+  hasNudgeEmail,
+}: {
+  baseUrl: string;
+  hasNudgeEmail: boolean;
+}) => {
   const { invitees, guests, updateInvitees } = useAdminRows();
   const [sendReport, setSendReport] = useState<string | null>(null);
   const rows = selectAwaitingReply(invitees, guests);
@@ -29,10 +35,12 @@ const AwaitingReplyTable = ({ baseUrl }: { baseUrl: string }) => {
     const response = await fetch('/api/admin/send-invitations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inviteeIds: [inviteeId] }),
+      // A nudge, not a second copy of the invitation — and force, because
+      // everyone on this list already has a send timestamp by definition.
+      body: JSON.stringify({ inviteeIds: [inviteeId], kind: 'nudge', force: true }),
     }).catch(() => null);
     if (!response?.ok) {
-      setSendReport('Send request failed — nothing was recorded as sent.');
+      setSendReport('Send request failed — it may still have gone out; wait for the table to refresh.');
       return;
     }
     const { results } = (await response.json()) as { results: InvitationSendResult[] };
@@ -43,13 +51,22 @@ const AwaitingReplyTable = ({ baseUrl }: { baseUrl: string }) => {
       }),
     );
     const failure = results.find((result) => !result.sent);
-    setSendReport(failure ? `Not sent: ${failure.reason ?? 'unknown'}` : 'Sent again.');
+    setSendReport(
+      failure
+        ? `Not sent to ${failure.name ?? 'them'}: ${failure.reason ?? 'unknown'}`
+        : hasNudgeEmail
+          ? 'Nudge sent.'
+          : 'Sent — but that was the invitation again, word for word. Write a nudge on the Invitation text tab.',
+    );
   };
 
   return (
     <div className="flex flex-col gap-3">
       <p className={`text-base ${adminMutedClassName}`}>
-        {sendReport ?? 'Invitations that went out and have no registration against them yet.'}
+        {sendReport ??
+          (hasNudgeEmail
+            ? 'Invitations that went out and have no registration against them yet. Nudge sends the nudge email.'
+            : 'Invitations that went out and have no registration against them yet. No nudge email is written, so a nudge would resend the invitation verbatim — write one on the Invitation text tab.')}
       </p>
       <div className="overflow-x-auto">
         <table className={adminTableClassName}>
@@ -92,12 +109,14 @@ const AwaitingReplyTable = ({ baseUrl }: { baseUrl: string }) => {
                 </td>
                 <td className={adminTdClassName}>
                   <SendInvitationButton
-                    label="Send again"
+                    label={hasNudgeEmail ? 'Nudge' : 'Send again'}
                     disabled={!row.email || !row.inviteToken}
                     title={
-                      row.email
-                        ? `Email the invitation to ${row.email} again`
-                        : 'This invitee has no email address'
+                      !row.email
+                        ? 'This invitee has no email address'
+                        : hasNudgeEmail
+                          ? `Email the nudge to ${row.email}`
+                          : `No nudge email is written — this resends the invitation to ${row.email} word for word`
                     }
                     onSend={() => resend(row.id)}
                   />

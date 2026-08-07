@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { Inter } from 'next/font/google';
 import { isAdmin } from '@/lib/auth';
 import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
-import { getInvitationEmail } from '@/lib/invitationEmail';
+import { getInvitationEmails } from '@/lib/invitationEmail';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
 import { loadAdminRows } from './loadAdminRows';
@@ -30,10 +30,10 @@ export const metadata = {
 export default async function AdminPage() {
   if (!(await isAdmin())) redirect('/admin/login');
 
-  const [rows, defaultInvitationHtml, invitationEmail, inviteeColumnOrder] = await Promise.all([
+  const [rows, defaultInvitationHtml, emails, inviteeColumnOrder] = await Promise.all([
     loadAdminRows(),
     getDefaultInvitationHtml(),
-    getInvitationEmail(),
+    getInvitationEmails(),
     readInviteeColumnOrder(),
   ]);
 
@@ -67,7 +67,7 @@ export default async function AdminPage() {
                   <InviteesTable
                     baseUrl={baseUrl}
                     hasDefaultInvitation={!!defaultInvitationHtml}
-                    hasInvitationEmail={!!invitationEmail.bodyHtml}
+                    hasInvitationEmail={!!emails.invitation.bodyHtml}
                     columnOrder={inviteeColumnOrder}
                   />
                 ),
@@ -82,7 +82,7 @@ export default async function AdminPage() {
                 id: 'awaiting-reply',
                 label: 'Awaiting reply',
                 count: <AwaitingReplyCount />,
-                panel: <AwaitingReplyTable baseUrl={baseUrl} />,
+                panel: <AwaitingReplyTable baseUrl={baseUrl} hasNudgeEmail={!!emails.nudge.bodyHtml} />,
               },
               {
                 id: 'menu',
@@ -104,13 +104,23 @@ export default async function AdminPage() {
                       <DefaultInvitationEditor initialHtml={defaultInvitationHtml} />
                     </section>
 
-                    <section>
+                    <section className="mb-14">
                       <h2 className="mb-1 text-3xl font-semibold">Invitation email</h2>
                       <p className="mb-4 text-base text-[#6f6a61]">
                         What the Send buttons on the Invitees tab actually mail out — its own text,
                         not the letter above.
                       </p>
-                      <InvitationEmailEditor initialEmail={invitationEmail} />
+                      <InvitationEmailEditor kind="invitation" initialEmail={emails.invitation} />
+                    </section>
+
+                    <section>
+                      <h2 className="mb-1 text-3xl font-semibold">Nudge email</h2>
+                      <p className="mb-4 text-base text-[#6f6a61]">
+                        What the Awaiting-reply tab sends to people who never answered. Left empty,
+                        a nudge resends the invitation above word for word — which reads as a mail
+                        glitch rather than a reminder.
+                      </p>
+                      <InvitationEmailEditor kind="nudge" initialEmail={emails.nudge} />
                     </section>
                   </div>
                 ),

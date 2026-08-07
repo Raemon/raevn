@@ -27,6 +27,9 @@ const DefaultInvitationEditor = ({
     extensions: [StarterKit],
     content: initialHtml ?? '',
     immediatelyRender: false,
+    // Without this TipTap 3 never re-renders us, so the toolbar's B/I/H2
+    // buttons never light up for the text the cursor is actually in.
+    shouldRerenderOnTransaction: true,
     onUpdate: () => setSaveState('idle'),
   });
   const saveInvitation = async () => {
