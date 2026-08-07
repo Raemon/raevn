@@ -20,7 +20,7 @@ import RsvpGratitude from './RsvpGratitude';
 // clicking it again takes it back — and the box underneath is what that answer
 // still needs, saving itself as it is edited.
 
-const invitationH3ClassName = `${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#cbc4b3]`;
+const invitationH3ClassName = `${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#c2c6cd]`;
 const rsvpChoiceButtonClassName = `${invitationH3ClassName} cursor-pointer bg-transparent border rounded-md px-6 py-2 transition-colors duration-200 motion-reduce:transition-none`;
 const quietNoteClassName = `${cormorant.className} m-0 text-center text-[0.9rem] font-light italic text-white/50`;
 
@@ -253,7 +253,7 @@ const GuestNameEntry = ({
           disabled={!isNoteUnsaved || isSavingNote || recordedGuestId === null}
           className={`${cormorant.className} absolute right-0 top-1 cursor-pointer rounded-sm border-none bg-transparent px-2 py-0.5 text-[0.85rem] font-light italic tracking-[0.04em] transition-colors duration-200 motion-reduce:transition-none disabled:cursor-default ${
             isNoteUnsaved && !isSavingNote && recordedGuestId !== null
-              ? 'text-[#cbc4b3] hover:text-white'
+              ? 'text-[#c2c6cd] hover:text-white'
               : 'text-white/30'
           }`}
         >
@@ -301,7 +301,7 @@ const GuestNameEntry = ({
         <button
           type="button"
           className={`${rsvpChoiceButtonClassName} ${
-            isAcceptingIntent ? 'border-[#fffff8] bg-white/15' : 'border-white/40'
+            isAcceptingIntent ? 'border-[#fbfcff] bg-white/15' : 'border-white/40'
           }`}
           aria-pressed={isAcceptingIntent}
           onClick={() => chooseRsvpIntent(true)}
@@ -311,7 +311,7 @@ const GuestNameEntry = ({
         <button
           type="button"
           className={`${rsvpChoiceButtonClassName} ${
-            rsvpIntent === false ? 'border-[#fffff8] bg-white/15' : 'border-white/40'
+            rsvpIntent === false ? 'border-[#fbfcff] bg-white/15' : 'border-white/40'
           }`}
           aria-pressed={rsvpIntent === false}
           onClick={() => chooseRsvpIntent(false)}
@@ -383,7 +383,7 @@ const GuestNameEntry = ({
                       type="button"
                       onClick={partyDraft.appendFamilyDraft}
                       disabled={partyDraft.familyDrafts.length >= MAX_FAMILY_MEMBERS}
-                      className={`${cormorant.className} cursor-pointer rounded-full border border-white/25 bg-transparent px-4 py-1 font-light italic tracking-[0.04em] text-[#cbc4b3] disabled:cursor-default disabled:opacity-40`}
+                      className={`${cormorant.className} cursor-pointer rounded-full border border-white/25 bg-transparent px-4 py-1 font-light italic tracking-[0.04em] text-[#c2c6cd] disabled:cursor-default disabled:opacity-40`}
                     >
                       Add a family member or +1
                     </button>

@@ -25,7 +25,7 @@ const CalendarOutboundShortcutCue = ({
           ? { download: outboundShortcutBlueprintBrief.downloadFilename }
           : { target: '_blank', rel: 'noopener noreferrer' })}
         aria-label={`Add to ${outboundShortcutBlueprintBrief.vendorLabelToken} Calendar`}
-        className={`${cinzel.className} inline-flex items-center justify-center gap-[0.4rem] px-2 py-[0.35rem] text-[0.7rem] font-normal uppercase tracking-[0.18em] text-[#f1ece0] no-underline`}
+        className={`${cinzel.className} inline-flex items-center justify-center gap-[0.4rem] px-2 py-[0.35rem] text-[0.7rem] font-normal uppercase tracking-[0.18em] text-[#ecedf1] no-underline`}
       >
         <CalendarGlyph />
       </a>

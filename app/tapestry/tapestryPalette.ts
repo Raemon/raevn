@@ -14,16 +14,16 @@ const mixHex = (from: string, to: string, t: number) => {
   return `#${blended.join('')}`;
 };
 
-// How far across from cream to a side's own colour a point at x sits. Full
+// How far across from silver to a side's own colour a point at x sits. Full
 // colour is reached well inside the half span and the exponent leaves the
-// centre quickly, so cream is a seam down the middle of the tree rather than
+// centre quickly, so silver is a seam down the middle of the tree rather than
 // the colour most of the crown is painted in.
 const spectrumMixAt = (x: number, centerX: number, halfSpan: number): number => {
   const reach = Math.abs(x - centerX) / (halfSpan * PALETTE.spectrumFullAt);
   return Math.pow(Math.min(1, reach), PALETTE.spectrumEase);
 };
 
-// Blue on Elizabeth's side, maroon on Ray's, brightening to cream at the centre.
+// Blue on Elizabeth's side, maroon on Ray's, brightening to silver at the centre.
 export const spectrumColorAt = (x: number, centerX: number, halfSpan: number): string => {
   const side = x <= centerX ? PALETTE.elizabeth : PALETTE.raymond;
   return mixHex(PALETTE.spectrumCenter, side, spectrumMixAt(x, centerX, halfSpan));
@@ -46,32 +46,32 @@ export const spectrumStrandEdgeAt = (
 export const leafFillColorFor = (color: string): string =>
   mixHex(color, PALETTE.cordRootShade, PALETTE.leafDarken);
 
-// Where a strand passes through the trunk. It used to pass through pure cream,
+// Where a strand passes through the trunk. It used to pass through pure silver,
 // which painted the trunk white however its two halves were coloured.
 export const spectrumStrandMidAt = (x: number, centerX: number, halfSpan: number): string =>
   mixHex(spectrumColorAt(x, centerX, halfSpan), PALETTE.spectrumCenter, PALETTE.threadCenterLift);
 
 // A cord carries its owner's colour the whole way rather than reading it off
 // the spectrum: both roots sit close enough to the trunk that the spectrum
-// would hand them the cream centre, which is what bleached the braid.
+// would hand them the silver centre, which is what bleached the braid.
 export const cordRootColorFor = (color: string): string =>
   mixHex(color, PALETTE.cordRootShade, PALETTE.cordRootMix);
 
 export const cordTipColorFor = (color: string): string =>
   mixHex(color, PALETTE.twigTip, PALETTE.cordTipMix);
 
-// Moonlit silver for Elizabeth's people, maroon for Ray's, candle cream for
+// Moonlit blue for Elizabeth's people, maroon for Ray's, polished silver for
 // shared friends — all chosen to glow against the page's black ground. The
 // maroons are lifted well off true oxblood: a real maroon is nearly invisible
 // on black at name sizes, so these keep the wine cast and the legibility.
 const SIDE_THREAD_COLORS: Record<TapestrySide, string[]> = {
   elizabeth: ['#aec1d8', '#8fa9c6', '#cfdbe9', '#7d97b8', '#bccde0'],
   ray: ['#bd5461', '#a84450', '#cf7b86', '#963a45', '#b26069'],
-  both: ['#f1ece0', '#ded2b6', '#cfc3a6', '#e8dfc9'],
+  both: ['#ecedf1', '#d3d7de', '#c5cad2', '#dee2e9'],
 };
 
-export const NAME_INK = '#f1ece0';
-export const FAINT_INK = '#cbc4b3';
+export const NAME_INK = '#ecedf1';
+export const FAINT_INK = '#c2c6cd';
 export const PAGE_BLACK = '#000000';
 
 export const pickThreadColor = (side: TapestrySide, seedText: string): string => {

@@ -33,14 +33,14 @@ const DietChoiceTrio = ({
         const dishes = menuOptions.filter((option) => option.diet === choice.diet);
         const label = (
           <label
-            className={`${cormorant.className} flex cursor-pointer items-center gap-2 text-[clamp(0.95rem,1.6vw,1.15rem)] font-light italic tracking-[0.04em] text-[#cbc4b3]`}
+            className={`${cormorant.className} flex cursor-pointer items-center gap-2 text-[clamp(0.95rem,1.6vw,1.15rem)] font-light italic tracking-[0.04em] text-[#c2c6cd]`}
           >
             <input
               type="radio"
               name={radioGroupName}
               checked={diet === choice.diet}
               onChange={() => onDietChange(choice.diet)}
-              className="h-4 w-4 cursor-pointer accent-[#cbc4b3]"
+              className="h-4 w-4 cursor-pointer accent-[#c2c6cd]"
             />
             <span>{choice.label}</span>
           </label>
@@ -56,9 +56,9 @@ const DietChoiceTrio = ({
             surfaceClassName="rounded-md border border-white/25 text-left"
             content={dishes.map((dish) => (
               <div key={dish.name} className={`${cormorant.className} not-italic`}>
-                <p className="m-0 text-[1rem] tracking-[0.03em] text-[#e9e3d4]">{dish.name}</p>
+                <p className="m-0 text-[1rem] tracking-[0.03em] text-[#e3e6eb]">{dish.name}</p>
                 {dish.description !== '' && (
-                  <p className="m-0 mb-1 text-[0.85rem] font-light leading-snug text-[#cbc4b3]">
+                  <p className="m-0 mb-1 text-[0.85rem] font-light leading-snug text-[#c2c6cd]">
                     {dish.description}
                   </p>
                 )}

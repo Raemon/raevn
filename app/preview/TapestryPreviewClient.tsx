@@ -55,7 +55,7 @@ const TapestryPreviewClient = ({
   );
   const atEnd = arrivedParties >= parties.length;
 
-  const controlClass = `${cormorant.className} rounded-full border border-white/20 px-3 py-1 text-sm leading-none text-[#cbc4b3] transition-colors hover:border-white/45 disabled:opacity-35 disabled:hover:border-white/20`;
+  const controlClass = `${cormorant.className} rounded-full border border-white/20 px-3 py-1 text-sm leading-none text-[#c2c6cd] transition-colors hover:border-white/45 disabled:opacity-35 disabled:hover:border-white/20`;
 
   return (
     <>

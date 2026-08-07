@@ -69,7 +69,7 @@ const Handfasting2 = ({
   }, []);
 
   return (
-    <main className="relative min-h-svh w-full overflow-hidden text-[#f1ece0] bg-black" aria-label="Ray and Elizabeth at sunset">
+    <main className="relative min-h-svh w-full overflow-hidden text-[#ecedf1] bg-black" aria-label="Ray and Elizabeth at sunset">
       <div
         aria-hidden
         className=" inset-0 z-0 bg-[url('/sunset.jpg')] bg-cover h-[100vh] fixed bg-[center_38%]"
@@ -81,12 +81,12 @@ const Handfasting2 = ({
             land the title on the photo's dark silhouette half. */}
         <div className="flex flex-col items-center px-6">
           <h1
-            className={`${playfair.className} mt-[min(500px,60svh)] text-[clamp(1.9rem,9.2vw,2.25rem)] md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#f1ece0] mb-4`}
+            className={`${playfair.className} mt-[min(500px,60svh)] text-[clamp(1.9rem,9.2vw,2.25rem)] md:text-[clamp(2.2rem,5.4vw,4.2rem)] font-normal italic leading-[1.04] tracking-[0.005em] text-[#ecedf1] mb-4`}
           >
             <span className="text-10xl">10</span> Years <span className=" italic text-[.75em] align-middle mx-1">&amp;</span> <span className="text-10xl">10</span> Days
           </h1>
           <h3
-            className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#cbc4b3]`}
+            className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.45rem)] font-light italic leading-[1.35] tracking-[0.04em] text-[#c2c6cd]`}
           >
             Round 2 of an{' '}
             <TaglineHovertext hovertext={taglineHovertext ?? DEFAULT_TAGLINE_HOVERTEXT}>
@@ -97,7 +97,7 @@ const Handfasting2 = ({
         </div>
         {personalization && (
           <div className="mt-12 flex w-full max-w-xl flex-col items-center gap-8 px-4">
-            <p className={`${cormorant.className} m-0 text-[clamp(1.2rem,2vw,1.6rem)] font-light italic tracking-[0.04em] text-[#e9e3d4]`}>
+            <p className={`${cormorant.className} m-0 text-[clamp(1.2rem,2vw,1.6rem)] font-light italic tracking-[0.04em] text-[#e3e6eb]`}>
               Dear {personalization.inviteeName},
             </p>
             {personalization.invitationHtml && (
@@ -105,12 +105,12 @@ const Handfasting2 = ({
                 // The outer margins are zeroed so the letter's own edges sit a
                 // single gap away from the salutation and signature, matching
                 // the spacing between its paragraphs rather than doubling it.
-                className={`${cormorant.className} w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e9e3d4] [&_p]:my-8 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic`}
+                className={`${cormorant.className} w-full text-[clamp(1.05rem,1.8vw,1.3rem)] font-light leading-relaxed text-[#e3e6eb] [&_p]:my-8 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h1]:text-3xl [&_h2]:text-2xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l [&_blockquote]:border-white/30 [&_blockquote]:pl-4 [&_blockquote]:italic`}
                 // Host-authored content from the /admin TipTap editor.
                 dangerouslySetInnerHTML={{ __html: personalization.invitationHtml }}
               />
             )}
-            <p className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.3rem)] font-light italic tracking-[0.04em] text-[#e9e3d4]`}>
+            <p className={`${cormorant.className} m-0 text-[clamp(1.05rem,1.8vw,1.3rem)] font-light italic tracking-[0.04em] text-[#e3e6eb]`}>
               &ndash; {signatureNames}
             </p>
           </div>

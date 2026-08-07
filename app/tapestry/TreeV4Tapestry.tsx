@@ -471,7 +471,7 @@ const TreeV4Tapestry = ({
             if (points.length === 0) return null;
             // One hue for the whole strand, taken from where its own leaf ends
             // up. Reading the colour off each end separately meant a thread
-            // spent its root and trunk in the cream centre — every strand
+            // spent its root and trunk in the silver centre — every strand
             // starts at a root cluster near the trunk — and only found its
             // side's colour in the last stretch out to the leaf.
             const tip = points[points.length - 1];

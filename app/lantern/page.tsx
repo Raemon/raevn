@@ -13,10 +13,10 @@ export const metadata = {
 export default function LanternRecoveryPage() {
   return (
     <main
-      className={`${cormorant.className} flex min-h-svh flex-col items-center justify-center gap-5 bg-[#0c0b09] px-8 text-center text-[#e9e3d4]`}
+      className={`${cormorant.className} flex min-h-svh flex-col items-center justify-center gap-5 bg-[#0c0b09] px-8 text-center text-[#e3e6eb]`}
     >
       <h1 className={`${playfair.className} m-0 text-2xl font-normal tracking-[0.06em]`}>Lantern</h1>
-      <p className="m-0 max-w-xs text-[0.95rem] leading-relaxed text-[#a49c8c]">
+      <p className="m-0 max-w-xs text-[0.95rem] leading-relaxed text-[#9ba0a8]">
         This door needs its key. Send the link to the hosts&rsquo; inboxes and open it from there.
       </p>
       <RequestLinkButton />
