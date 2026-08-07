@@ -6,7 +6,15 @@ export const sideBlendFromSide = (side: string): number => {
   return 0.5;
 };
 
-export const resolveSideBlend = (sideBlend: number | null | undefined, side: string): number =>
+// The number plus whose side it leans toward. Exactly 0.5 is even, so it
+// reads as the bare number.
+export const formatSideBlend = (sideBlend: number): string => {
+  if (sideBlend < 0.5) return `${sideBlend} (Ray)`;
+  if (sideBlend > 0.5) return `${sideBlend} (EVN)`;
+  return String(sideBlend);
+};
+
+export const resolveSideBlend =(sideBlend: number | null | undefined, side: string): number =>
   typeof sideBlend === 'number' && Number.isFinite(sideBlend)
     ? Math.min(1, Math.max(0, sideBlend))
     : sideBlendFromSide(side);

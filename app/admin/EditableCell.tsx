@@ -22,11 +22,16 @@ const fitHeightToContent = (element: HTMLTextAreaElement | null) => {
 
 const EditableCell = ({
   value,
+  displayValue,
   placeholder = '—',
   className = '',
   onCommit,
 }: {
   value: string;
+  // What the cell reads as when it isn't being edited, when that differs from
+  // the raw text an edit starts from (a side blend shows whose side it leans
+  // toward; typing still starts from the bare number).
+  displayValue?: string;
   placeholder?: string;
   className?: string;
   onCommit: (nextValue: string) => Promise<boolean>;
@@ -94,7 +99,11 @@ const EditableCell = ({
       style={value.includes('\n') ? { whiteSpace: 'pre-wrap' } : undefined}
       className={`block min-h-6 cursor-text ${isSaving ? 'opacity-50' : ''} ${className}`}
     >
-      {value !== '' ? value : <span className={adminMutedClassName}>{placeholder}</span>}
+      {value !== '' ? (
+        (displayValue ?? value)
+      ) : (
+        <span className={adminMutedClassName}>{placeholder}</span>
+      )}
     </span>
   );
 };

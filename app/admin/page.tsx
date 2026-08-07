@@ -7,6 +7,8 @@ import { getInvitationEmail } from '@/lib/invitationEmail';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
 import { loadAdminRows } from './loadAdminRows';
+import AdminTabs from './AdminTabs';
+import AwaitingReplyTable, { AwaitingReplyCount } from './AwaitingReplyTable';
 import DefaultInvitationEditor from './DefaultInvitationEditor';
 import InvitationEmailEditor from './InvitationEmailEditor';
 import GuestsTable from './GuestsTable';
@@ -50,61 +52,71 @@ export default async function AdminPage() {
           <h1 className="mt-2 text-5xl font-semibold">Guest Ledger</h1>
         </header>
 
-        <section className="mx-auto mb-14 max-w-6xl">
-          <h2 className="mb-1 text-3xl font-semibold">Default invitation</h2>
-          <p className="mb-4 text-base text-[#6f6a61]">
-            Shown exactly as every invite page renders it, unless you write someone a personal letter.
-          </p>
-          <DefaultInvitationEditor initialHtml={defaultInvitationHtml} />
-        </section>
-
-        <section className="mx-auto mb-14 max-w-6xl">
-          <h2 className="mb-1 text-3xl font-semibold">Invitation email</h2>
-          <p className="mb-4 text-base text-[#6f6a61]">
-            What the Send buttons below actually mail out — its own text, not the letter above.
-          </p>
-          <InvitationEmailEditor initialEmail={invitationEmail} />
-        </section>
-
         <AdminRowsProvider
           initialInvitees={rows.invitees}
           initialGuests={rows.guests}
           initialMenuOptions={rows.menuOptions}
         >
-          <section className="mb-14">
-            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
-              Invitees{' '}
-              <span className="text-2xl font-medium text-[#7a5a1c]">
-                <AdminRowCount of="invitees" />
-              </span>
-            </h2>
-            <InviteesTable
-              baseUrl={baseUrl}
-              hasDefaultInvitation={!!defaultInvitationHtml}
-              hasInvitationEmail={!!invitationEmail.bodyHtml}
-              columnOrder={inviteeColumnOrder}
-            />
-          </section>
+          <AdminTabs
+            tabs={[
+              {
+                id: 'invitees',
+                label: 'Invitees',
+                count: <AdminRowCount of="invitees" />,
+                panel: (
+                  <InviteesTable
+                    baseUrl={baseUrl}
+                    hasDefaultInvitation={!!defaultInvitationHtml}
+                    hasInvitationEmail={!!invitationEmail.bodyHtml}
+                    columnOrder={inviteeColumnOrder}
+                  />
+                ),
+              },
+              {
+                id: 'registrations',
+                label: 'Registrations',
+                count: <AdminRowCount of="guests" />,
+                panel: <GuestsTable />,
+              },
+              {
+                id: 'awaiting-reply',
+                label: 'Awaiting reply',
+                count: <AwaitingReplyCount />,
+                panel: <AwaitingReplyTable baseUrl={baseUrl} />,
+              },
+              {
+                id: 'menu',
+                label: 'Menu',
+                count: <AdminRowCount of="menuOptions" />,
+                panel: <MenuOptionsTable />,
+              },
+              {
+                id: 'invitation-text',
+                label: 'Invitation text',
+                panel: (
+                  <div className="mx-auto max-w-6xl">
+                    <section className="mb-14">
+                      <h2 className="mb-1 text-3xl font-semibold">Default invitation</h2>
+                      <p className="mb-4 text-base text-[#6f6a61]">
+                        Shown exactly as every invite page renders it, unless you write someone a
+                        personal letter.
+                      </p>
+                      <DefaultInvitationEditor initialHtml={defaultInvitationHtml} />
+                    </section>
 
-          <section className="mb-14">
-            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
-              Registrations{' '}
-              <span className="text-2xl font-medium text-[#7a5a1c]">
-                <AdminRowCount of="guests" />
-              </span>
-            </h2>
-            <GuestsTable />
-          </section>
-
-          <section className="mb-14">
-            <h2 className="mb-3 border-b border-[#cfc7b6] pb-2 text-3xl font-semibold">
-              Menu{' '}
-              <span className="text-2xl font-medium text-[#7a5a1c]">
-                <AdminRowCount of="menuOptions" />
-              </span>
-            </h2>
-            <MenuOptionsTable />
-          </section>
+                    <section>
+                      <h2 className="mb-1 text-3xl font-semibold">Invitation email</h2>
+                      <p className="mb-4 text-base text-[#6f6a61]">
+                        What the Send buttons on the Invitees tab actually mail out — its own text,
+                        not the letter above.
+                      </p>
+                      <InvitationEmailEditor initialEmail={invitationEmail} />
+                    </section>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </AdminRowsProvider>
 
         <footer className="border-t border-[#ddd6c8] pt-5 text-center text-base text-[#6f6a61]">
