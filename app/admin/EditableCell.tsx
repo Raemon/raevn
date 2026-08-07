@@ -24,11 +24,15 @@ const EditableCell = ({
   value,
   placeholder = '—',
   className = '',
+  title,
   onCommit,
 }: {
   value: string;
   placeholder?: string;
   className?: string;
+  // Replaces the default "Double-click to edit" hint when the cell has
+  // something more urgent to say (why it is flagged, say).
+  title?: string;
   onCommit: (nextValue: string) => Promise<boolean>;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -87,7 +91,7 @@ const EditableCell = ({
   return (
     <span
       onDoubleClick={beginEditing}
-      title="Double-click to edit"
+      title={title ?? 'Double-click to edit'}
       // A value that was typed across lines reads back across the same lines;
       // set only when there are newlines, so the columns that ask for one
       // unbroken line (email) keep it.

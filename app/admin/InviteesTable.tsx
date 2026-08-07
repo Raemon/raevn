@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import type { InviteeAdminRow } from './adminRowTypes';
 import type { InvitationSendResult } from '../api/admin/send-invitations/route';
 import { useAdminRows } from './AdminRowsProvider';
@@ -16,6 +16,7 @@ import {
 import DeleteRowButton from './DeleteRowButton';
 import EditableCell from './EditableCell';
 import GuestPartyLinkSelect from './GuestPartyLinkSelect';
+import { hovertextIssues } from './hovertextIssues';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
 import {
@@ -42,6 +43,36 @@ const LinkIcon = () => (
   </svg>
 );
 
+// Sorting is a view over the ledger only — nothing here writes sortOrder, so
+// switching back to "order" always restores the hand-arranged sequence.
+const SORT_OPTIONS = [
+  { id: 'order', label: 'order (#)' },
+  { id: 'name', label: 'name' },
+  { id: 'shortestHovertext', label: 'shortest diagram hovertext' },
+  { id: 'notEmailed', label: 'not emailed first' },
+] as const;
+
+type InviteeSortId = (typeof SORT_OPTIONS)[number]['id'];
+
+const compareBySortOrder = (a: InviteeAdminRow, b: InviteeAdminRow): number =>
+  a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
+
+// Every comparator falls back to the hand-arranged order, so rows that tie on
+// the chosen key (all the empty hovertexts, all the unsent invitees) stay in the
+// sequence you already know rather than shuffling on each poll.
+const INVITEE_COMPARATORS: Record<
+  InviteeSortId,
+  (a: InviteeAdminRow, b: InviteeAdminRow) => number
+> = {
+  order: compareBySortOrder,
+  name: (a, b) => a.name.localeCompare(b.name) || compareBySortOrder(a, b),
+  shortestHovertext: (a, b) =>
+    (a.diagramHovertext?.trim().length ?? 0) - (b.diagramHovertext?.trim().length ?? 0) ||
+    compareBySortOrder(a, b),
+  notEmailed: (a, b) =>
+    Number(!!a.invitationSentAt) - Number(!!b.invitationSentAt) || compareBySortOrder(a, b),
+};
+
 const InviteesTable = ({
   baseUrl,
   hasDefaultInvitation,
@@ -60,6 +91,7 @@ const InviteesTable = ({
   // Rows live in AdminRowsProvider, which re-reads the database every few
   // seconds; setRows still applies our own edits the instant they save.
   const { invitees: rows, updateInvitees: setRows } = useAdminRows();
+  const [sortBy, setSortBy] = useState<InviteeSortId>('order');
   const [editingInviteeId, setEditingInviteeId] = useState<string | null>(null);
   const [sendReport, setSendReport] = useState<string | null>(null);
   const [columns, setColumns] = useState(() => orderInviteeColumns(columnOrder));
@@ -273,12 +305,17 @@ const InviteesTable = ({
             />
           </td>
         );
-      case 'diagramHovertext':
+      case 'diagramHovertext': {
+        // Unsigned, mid-text line breaks, or a signature from the wrong side:
+        // all read as "this one still needs a pass", so they share one colour.
+        const issues = hovertextIssues(row);
         return (
           <td key={columnId} className={`${adminTdClassName} max-w-56 text-sm ${adminMutedClassName}`}>
             <EditableCell
               value={row.diagramHovertext ?? ''}
               placeholder=""
+              className={issues.length > 0 ? 'text-[#b02020]' : ''}
+              title={issues.length > 0 ? issues.join(' · ') : undefined}
               onCommit={(nextValue) =>
                 patchInviteeField(row.id, {
                   diagramHovertext: nextValue.trim() === '' ? null : nextValue,
@@ -287,6 +324,7 @@ const InviteesTable = ({
             />
           </td>
         );
+      }
       case 'link':
         return (
           <td key={columnId} className={`${adminTdClassName} w-8 text-right`}>
@@ -356,14 +394,33 @@ const InviteesTable = ({
     }
   };
 
+  const sortedRows = useMemo(
+    () => [...rows].sort(INVITEE_COMPARATORS[sortBy]),
+    [rows, sortBy],
+  );
+
   const unsentReadyRows = rows.filter((row) => readyToSend(row) && !row.invitationSentAt);
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className={`text-base ${adminMutedClassName}`}>
           {sendReport ?? 'double-click a cell to edit; saves on blur · drag a column header to reorder'}
         </span>
+        <label className="flex items-center gap-2 whitespace-nowrap text-sm font-semibold uppercase tracking-wider text-[#7a5a1c]">
+          sort by
+          <select
+            value={sortBy}
+            onChange={(changeEvent) => setSortBy(changeEvent.target.value as InviteeSortId)}
+            className="cursor-pointer rounded-sm border border-[#b99a5e] bg-white px-2 py-1 text-sm font-medium normal-case tracking-normal text-[#1f1c18]"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
       <div className="overflow-x-auto">
         <table className={adminTableClassName}>
@@ -410,7 +467,7 @@ const InviteesTable = ({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <Fragment key={row.id}>
                 <tr>
                   {columns.map((columnId) => renderCell(columnId, row))}
