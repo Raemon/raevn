@@ -47,6 +47,7 @@ const LinkIcon = () => (
 // Sorting is a view over the ledger only — nothing here writes sortOrder, so
 // switching back to "order" always restores the hand-arranged sequence.
 const SORT_OPTIONS = [
+  { id: 'needsAttention', label: 'needs attention' },
   { id: 'order', label: 'order (#)' },
   { id: 'name', label: 'name' },
   { id: 'shortestHovertext', label: 'shortest diagram hovertext' },
@@ -58,6 +59,21 @@ type InviteeSortId = (typeof SORT_OPTIONS)[number]['id'];
 const compareBySortOrder = (a: InviteeAdminRow, b: InviteeAdminRow): number =>
   a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
 
+// Deliberately loose: this asks "is there an address here at all", so it
+// catches a blank, a bare name, and "ask Ray" rather than RFC edge cases.
+const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// The default view is a to-do list — whatever still needs a pass comes first,
+// in the order we'd do the work: chase down an address, write the missing
+// hovertexts, then fix the ones hovertextIssues flags as wrong. Everything
+// finished sits below, still in hand-arranged order.
+const attentionRank = (row: InviteeAdminRow): number => {
+  if (!LOOKS_LIKE_EMAIL.test(row.email?.trim() ?? '')) return 0;
+  if ((row.diagramHovertext?.trim() ?? '') === '') return 1;
+  if (hovertextIssues(row).length > 0) return 2;
+  return 3;
+};
+
 // Every comparator falls back to the hand-arranged order, so rows that tie on
 // the chosen key (all the empty hovertexts, all the unsent invitees) stay in the
 // sequence you already know rather than shuffling on each poll.
@@ -65,6 +81,7 @@ const INVITEE_COMPARATORS: Record<
   InviteeSortId,
   (a: InviteeAdminRow, b: InviteeAdminRow) => number
 > = {
+  needsAttention: (a, b) => attentionRank(a) - attentionRank(b) || compareBySortOrder(a, b),
   order: compareBySortOrder,
   name: (a, b) => a.name.localeCompare(b.name) || compareBySortOrder(a, b),
   shortestHovertext: (a, b) =>
@@ -92,7 +109,7 @@ const InviteesTable = ({
   // Rows live in AdminRowsProvider, which re-reads the database every few
   // seconds; setRows still applies our own edits the instant they save.
   const { invitees: rows, updateInvitees: setRows } = useAdminRows();
-  const [sortBy, setSortBy] = useState<InviteeSortId>('order');
+  const [sortBy, setSortBy] = useState<InviteeSortId>('needsAttention');
   const [editingInviteeId, setEditingInviteeId] = useState<string | null>(null);
   const [sendReport, setSendReport] = useState<string | null>(null);
   const [columns, setColumns] = useState(() => orderInviteeColumns(columnOrder));
