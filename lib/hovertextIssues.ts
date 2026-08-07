@@ -1,4 +1,6 @@
-import type { InviteeAdminRow } from './adminRowTypes';
+// Only the two fields the checks read, so both the desktop ledger row and the
+// phone editor's lighter row shape can be passed straight in.
+type HovertextRow = { diagramHovertext: string | null; sideBlend: number };
 
 // Every diagram hovertext is signed by whoever wrote it — "– Ray" or
 // "– Elizabeth" — and the side blend says which of us should have written it.
@@ -22,7 +24,7 @@ const paragraphs = (text: string): string[] =>
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph !== '');
 
-export const hovertextIssues = (row: InviteeAdminRow): string[] => {
+export const hovertextIssues = (row: HovertextRow): string[] => {
   const text = row.diagramHovertext?.trim() ?? '';
   // An unwritten hovertext is already obvious from the empty cell; red is
   // reserved for text that exists and is wrong.
@@ -59,7 +61,7 @@ export const hovertextIssues = (row: InviteeAdminRow): string[] => {
 const SHARED_BLEND_MIN = 0.4;
 const SHARED_BLEND_MAX = 0.6;
 
-export const sharedSignoffWarnings = (row: InviteeAdminRow): string[] => {
+export const sharedSignoffWarnings = (row: HovertextRow): string[] => {
   const text = row.diagramHovertext?.trim() ?? '';
   if (text === '') return [];
   if (row.sideBlend < SHARED_BLEND_MIN || row.sideBlend > SHARED_BLEND_MAX) return [];
