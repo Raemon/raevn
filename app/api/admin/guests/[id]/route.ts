@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Diet } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { withAdmin } from '@/lib/auth';
+import { MAX_GUEST_NOTE_LENGTH } from '@/app/handfasting-simple/guest-constellation/partyLimits';
 
 // Partial update of host-editable guest fields from admin table cell edits.
 
@@ -13,6 +14,7 @@ type GuestPatch = {
   rsvp?: boolean | null;
   isChildUnder2?: boolean;
   needsHighChair?: boolean;
+  note?: string | null;
   registeredById?: string | null;
 };
 
@@ -25,6 +27,11 @@ const buildGuestPatch = (body: Record<string, unknown>): GuestPatch => {
   }
   if (typeof body.isChildUnder2 === 'boolean') patch.isChildUnder2 = body.isChildUnder2;
   if (typeof body.needsHighChair === 'boolean') patch.needsHighChair = body.needsHighChair;
+  if (body.note === null) patch.note = null;
+  if (typeof body.note === 'string') {
+    const trimmedNote = body.note.trim().slice(0, MAX_GUEST_NOTE_LENGTH);
+    patch.note = trimmedNote === '' ? null : trimmedNote;
+  }
   if ('registeredById' in body) {
     patch.registeredById =
       body.registeredById === null || body.registeredById === ''
@@ -41,6 +48,7 @@ const resolveGuestAdminFields = async (guest: {
   registeredById: string | null;
   inviteeId: string | null;
   rsvp: boolean | null;
+  note: string | null;
 }) => {
   const [registeredBy, invitee] = await Promise.all([
     guest.registeredById
@@ -56,6 +64,7 @@ const resolveGuestAdminFields = async (guest: {
     inviteeId: guest.inviteeId,
     inviteeName: invitee?.name ?? null,
     rsvp: guest.rsvp,
+    note: guest.note,
   };
 };
 

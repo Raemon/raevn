@@ -21,6 +21,7 @@ const GUEST_COLUMNS = [
   'diet',
   'child under 2',
   'high chair',
+  'note',
   'party link',
   'invitee link',
   'created',
@@ -179,6 +180,15 @@ const GuestsTable = () => {
                       if (nextFlag === undefined) return Promise.resolve(false);
                       return patchGuestField(row.id, { needsHighChair: nextFlag });
                     }}
+                  />
+                </td>
+                <td className={`${adminTdClassName} max-w-64 whitespace-pre-wrap text-sm ${adminMutedClassName}`}>
+                  <EditableCell
+                    value={row.note ?? ''}
+                    placeholder=""
+                    onCommit={(nextValue) =>
+                      patchGuestField(row.id, { note: nextValue.trim() === '' ? null : nextValue })
+                    }
                   />
                 </td>
                 <td className={adminTdClassName}>
