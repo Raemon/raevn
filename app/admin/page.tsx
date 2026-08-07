@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { toString } from 'qrcode';
 import { redirect } from 'next/navigation';
 import { Inter } from 'next/font/google';
 import { isAdmin } from '@/lib/auth';
@@ -48,6 +49,9 @@ export default async function AdminPage() {
     (host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https');
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `${protocol}://${host}`;
   const lanternUrl = `${baseUrl}/lantern/${pocketKey()}`;
+  // Rendered here rather than client-side so the key never becomes a prop in
+  // the page's serialized payload — it stays in the markup and nowhere else.
+  const lanternQrSvg = await toString(lanternUrl, { type: 'svg', margin: 0, width: 132 });
 
   return (
     <main className={`${adminFont.className} min-h-svh bg-[#faf8f4] pb-24 text-[#1f1c18]`}>
@@ -148,13 +152,19 @@ export default async function AdminPage() {
             seeded from guestlist.json via scripts/seed-invitees.mjs — invite tokens mint on seed
           </p>
           {/* The phone editor has no login screen, so this is the only place the
-              link is ever written down. Only a signed-in admin sees it. */}
-          <p className="mt-2 break-all text-sm">
-            hover notes on your phone:{' '}
-            <a className="text-[#7a5a1c] underline" href={lanternUrl}>
+              link is ever written down. Only a signed-in admin sees it — and
+              the QR is here because the alternative is typing 32 characters of
+              hex into a phone, which is the friction this whole page removes. */}
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="m-0 text-sm">hover notes on your phone — point a camera at this:</p>
+            <span
+              className="inline-block rounded bg-white p-2 [&>svg]:block"
+              dangerouslySetInnerHTML={{ __html: lanternQrSvg }}
+            />
+            <a className="break-all text-sm text-[#7a5a1c] underline" href={lanternUrl}>
               {lanternUrl}
             </a>
-          </p>
+          </div>
         </footer>
       </div>
     </main>
