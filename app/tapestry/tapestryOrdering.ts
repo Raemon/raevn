@@ -25,9 +25,12 @@ export const groupIntoFamilies = (persons: TapestryPerson[]): TapestryFamily[] =
       });
     }
   }
+  // Descending sideBlend: 1 is Elizabeth, and the crown sweeps from
+  // SECTOR_START on the left, where elizabethRoot is. Sorting the other way
+  // hung each side's guests above the other one's root.
   return [...familiesByKey.values()].sort(
     (a, b) =>
-      (a.members[0]?.sideBlend ?? 0.5) - (b.members[0]?.sideBlend ?? 0.5) ||
+      (b.members[0]?.sideBlend ?? 0.5) - (a.members[0]?.sideBlend ?? 0.5) ||
       a.familyKey.localeCompare(b.familyKey),
   );
 };

@@ -17,7 +17,7 @@ import DeleteRowButton from './DeleteRowButton';
 import DryRunPanel from './DryRunPanel';
 import EditableCell from './EditableCell';
 import GuestPartyLinkSelect from './GuestPartyLinkSelect';
-import { hovertextIssues, sharedSignoffWarnings } from './hovertextIssues';
+import { hovertextIssues, sharedSignoffWarnings } from '@/lib/hovertextIssues';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
 import { formatSideBlend } from '@/lib/sideBlend';
