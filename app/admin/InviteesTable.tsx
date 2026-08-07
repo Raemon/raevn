@@ -19,6 +19,7 @@ import GuestPartyLinkSelect from './GuestPartyLinkSelect';
 import { hovertextIssues } from './hovertextIssues';
 import InvitationEditor from './InvitationEditor';
 import SendInvitationButton from './SendInvitationButton';
+import { formatSideBlend } from '@/lib/sideBlend';
 import {
   INVITEE_COLUMN_LABELS,
   orderInviteeColumns,
@@ -237,9 +238,10 @@ const InviteesTable = ({
         );
       case 'sideBlend':
         return (
-          <td key={columnId} className={`${adminTdClassName} w-20`}>
+          <td key={columnId} className={`${adminTdClassName} w-28`}>
             <EditableCell
               value={String(row.sideBlend)}
+              displayValue={formatSideBlend(row.sideBlend)}
               className={adminMutedClassName}
               onCommit={(nextValue) => {
                 const nextSideBlend = Number.parseFloat(nextValue);
