@@ -38,6 +38,18 @@ export const FRAME = {
   // grow taller than the viewport. When it bites, the drawing scales down and
   // centres rather than being cropped.
   maxHeightVh: 90,
+  // Phones get the frame's empty side margins cropped away instead of shrunk
+  // onto the screen: a young tree fills only the middle of this wide frame, and
+  // scaling all of it into a phone's width left every name unreadably small.
+  // Below this CSS width the drawing is blown up so the widest thing actually
+  // in it spans the screen, and the blank sides overflow out of frame.
+  phoneMaxWidthPx: 767,
+  // Breathing room kept beyond the widest name on those screens, in viewBox
+  // units per side.
+  phoneSideMargin: 30,
+  // A floor on the visible half-width, so the couple's signature and tagline
+  // under the roots — wider than a seedling's whole crown — never leave frame.
+  phoneMinHalfWidth: 210,
 };
 
 // ---------------------------------------------------------------------------
