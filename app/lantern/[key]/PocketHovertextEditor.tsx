@@ -118,11 +118,11 @@ const PocketHovertextEditor = ({
   const written = invitees.filter((invitee) => (invitee.diagramHovertext ?? '').trim() !== '').length;
 
   return (
-    <main className={`${cormorant.className} min-h-svh bg-[#0c0b09] pb-16 text-[#e9e3d4]`}>
+    <main className={`${cormorant.className} min-h-svh bg-[#0c0b09] pb-16 text-[#e3e6eb]`}>
       <header className="sticky top-0 z-10 border-b border-white/10 bg-[#0c0b09]/95 px-4 pb-3 pt-4 backdrop-blur">
         <div className="flex items-baseline justify-between">
           <h1 className={`${playfair.className} m-0 text-xl font-normal tracking-[0.06em]`}>Hover notes</h1>
-          <span className="text-xs tracking-wide text-[#7d766a]">
+          <span className="text-xs tracking-wide text-[#757980]">
             {written}/{invitees.length} written
           </span>
         </div>
@@ -131,7 +131,7 @@ const PocketHovertextEditor = ({
           value={query}
           onChange={(changeEvent) => setQuery(changeEvent.target.value)}
           placeholder="Find a name"
-          className="mt-3 w-full rounded-md border border-white/20 bg-black/50 px-3 py-2 text-base outline-none placeholder:text-[#6f685c] focus:border-white/45"
+          className="mt-3 w-full rounded-md border border-white/20 bg-black/50 px-3 py-2 text-base outline-none placeholder:text-[#676b72] focus:border-white/45"
         />
         <div className="mt-2 flex gap-2 text-xs uppercase tracking-[0.18em]">
           {(['all', 'unwritten', 'flagged'] as const).map((option) => (
@@ -142,7 +142,7 @@ const PocketHovertextEditor = ({
               className={`rounded-full border px-3 py-1 transition-colors ${
                 filter === option
                   ? 'border-[#c9a85c] bg-[#c9a85c]/15 text-[#e9d9ae]'
-                  : 'border-white/15 bg-transparent text-[#7d766a]'
+                  : 'border-white/15 bg-transparent text-[#757980]'
               }`}
             >
               {option}
@@ -170,14 +170,14 @@ const PocketHovertextEditor = ({
                       would print the note twice. */}
                   {!isOpen && (
                     <span
-                      className={`mt-0.5 block text-sm leading-snug ${text === '' ? 'italic text-[#6f685c]' : 'text-[#a49c8c]'}`}
+                      className={`mt-0.5 block text-sm leading-snug ${text === '' ? 'italic text-[#676b72]' : 'text-[#9ba0a8]'}`}
                       style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
                     >
                       {text === '' ? 'no note yet' : text}
                     </span>
                   )}
                 </span>
-                <span className="shrink-0 pt-1 text-[0.65rem] uppercase tracking-[0.16em] text-[#6f685c]">
+                <span className="shrink-0 pt-1 text-[0.65rem] uppercase tracking-[0.16em] text-[#676b72]">
                   {blendLabel(invitee.sideBlend)}
                 </span>
               </button>
@@ -202,25 +202,25 @@ const PocketHovertextEditor = ({
                     onFocus={(focusEvent) => fitHeightToContent(focusEvent.target)}
                     rows={4}
                     placeholder="What they should read when they find their name…"
-                    className="w-full resize-none rounded-md border border-white/25 bg-black/60 px-3 py-2 text-base italic leading-[1.5] outline-none placeholder:text-[#6f685c] focus:border-white/45"
+                    className="w-full resize-none rounded-md border border-white/25 bg-black/60 px-3 py-2 text-base italic leading-[1.5] outline-none placeholder:text-[#676b72] focus:border-white/45"
                   />
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em]">
                     <button
                       type="button"
                       onClick={() => appendSignature('Ray')}
-                      className="rounded-full border border-white/15 bg-transparent px-3 py-1 text-[#a49c8c]"
+                      className="rounded-full border border-white/15 bg-transparent px-3 py-1 text-[#9ba0a8]"
                     >
                       – Ray
                     </button>
                     <button
                       type="button"
                       onClick={() => appendSignature('Elizabeth')}
-                      className="rounded-full border border-white/15 bg-transparent px-3 py-1 text-[#a49c8c]"
+                      className="rounded-full border border-white/15 bg-transparent px-3 py-1 text-[#9ba0a8]"
                     >
                       – Elizabeth
                     </button>
                     <span className="grow" />
-                    <span className={`normal-case tracking-wide ${saveState === 'error' ? 'text-[#c96a5a]' : 'text-[#6f685c]'}`}>
+                    <span className={`normal-case tracking-wide ${saveState === 'error' ? 'text-[#c96a5a]' : 'text-[#676b72]'}`}>
                       {saveState === 'saving'
                         ? 'saving…'
                         : saveState === 'saved'
@@ -243,7 +243,7 @@ const PocketHovertextEditor = ({
           );
         })}
         {visible.length === 0 && (
-          <li className="px-4 py-10 text-center text-sm italic text-[#6f685c]">Nobody matches that.</li>
+          <li className="px-4 py-10 text-center text-sm italic text-[#676b72]">Nobody matches that.</li>
         )}
       </ul>
     </main>

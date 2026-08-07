@@ -98,7 +98,7 @@ html, body {
 /* TipTap placeholder ghost text (Placeholder extension, used on /letters) */
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
-  color: #6b655a;
+  color: #666a71;
   font-style: italic;
   float: left;
   height: 0;

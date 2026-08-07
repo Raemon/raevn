@@ -126,7 +126,7 @@ const LetterCard = ({
 
       <EditorContent
         editor={editor}
-        className="mt-3 [&_.tiptap]:min-h-10 [&_.tiptap]:text-lg [&_.tiptap]:leading-relaxed [&_.tiptap]:text-[#e6dfd0] [&_.tiptap]:outline-none [&_.tiptap_p]:my-1.5 [&_.tiptap_h2]:mt-3 [&_.tiptap_h2]:text-xl [&_.tiptap_h2]:font-medium [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-6 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-6"
+        className="mt-3 [&_.tiptap]:min-h-10 [&_.tiptap]:text-lg [&_.tiptap]:leading-relaxed [&_.tiptap]:text-[#dfe2e8] [&_.tiptap]:outline-none [&_.tiptap_p]:my-1.5 [&_.tiptap_h2]:mt-3 [&_.tiptap_h2]:text-xl [&_.tiptap_h2]:font-medium [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-6 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-6"
       />
     </section>
   );

@@ -92,7 +92,7 @@ export const Tooltip = ({
     ...getReferenceProps(),
   };
 
-  const color = background ?? "#fffff8" //"rgba(240, 233, 211, 0.95)"
+  const color = background ?? "#fbfcff" //"rgba(240, 233, 211, 0.95)"
   return (
     <>
       {cloneElement(children, elementProps)}

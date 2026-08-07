@@ -31,7 +31,7 @@ const FamilyMemberRow = ({
         type="button"
         aria-label={draft.name ? `Remove ${draft.name}` : 'Remove family member'}
         onClick={onDiscard}
-        className="cursor-pointer border-none bg-transparent px-2 text-xl leading-none text-[#cbc4b3]"
+        className="cursor-pointer border-none bg-transparent px-2 text-xl leading-none text-[#c2c6cd]"
       >
         ×
       </button>

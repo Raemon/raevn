@@ -23,7 +23,7 @@ export default async function LettersPage() {
   const invitees = await prisma.invitee.findMany({ orderBy: { sortOrder: 'asc' } });
 
   return (
-    <main className={`${cormorant.className} min-h-svh bg-[#0b0a09] pb-24 text-[#f1ece0]`}>
+    <main className={`${cormorant.className} min-h-svh bg-[#0b0a09] pb-24 text-[#ecedf1]`}>
       <div className="mx-auto max-w-3xl px-6">
         <header className="pb-10 pt-14 text-center">
           <p className="text-sm uppercase tracking-[.35em] text-[#c9a05e]">Ray &amp; Elizabeth</p>

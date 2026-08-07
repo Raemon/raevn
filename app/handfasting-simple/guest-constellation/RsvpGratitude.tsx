@@ -32,7 +32,7 @@ const RsvpGratitude = () => (
         // The sheen rides a gradient clipped to the glyphs; at its resting
         // position the bright band has already passed off the end of the word.
         backgroundImage:
-          'linear-gradient(100deg, #e9e3d4 32%, #fffdf2 45%, #fff7e2 50%, #e9e3d4 63%)',
+          'linear-gradient(100deg, #e3e6eb 32%, #fbfdff 45%, #f2f7ff 50%, #e3e6eb 63%)',
         backgroundSize: '250% 100%',
         backgroundPosition: '260% 0',
         WebkitBackgroundClip: 'text',

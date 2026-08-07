@@ -60,7 +60,7 @@ const TapestryNameLabel = ({
       styleManually
       forceOpen={showCelebrationTooltip}
       background="rgba(0, 0, 0, 0.9)"
-      surfaceClassName={`${cormorant.className} whitespace-pre-wrap rounded-md border border-white/25 text-left text-[0.95rem] font-light italic tracking-[0.03em] text-[#e9e3d4]`}
+      surfaceClassName={`${cormorant.className} whitespace-pre-wrap rounded-md border border-white/25 text-left text-[0.95rem] font-light italic tracking-[0.03em] text-[#e3e6eb]`}
       content={hovertext}
     >
       {text}
