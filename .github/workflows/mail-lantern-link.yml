@@ -1,0 +1,16 @@
+name: Mail the lantern link
+
+# Manual only. Asks the live site to email the phone editor's link to the two
+# host addresses — the same button /lantern shows, for when it is easier to
+# press from here. Nothing secret passes through this workflow or its logs:
+# the request carries no key and the reply carries no link.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the site to send it
+        run: curl -sS -f -X POST https://raevn.love/api/pocket/request-link -o /dev/null
