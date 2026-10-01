@@ -18,6 +18,7 @@ import TaglineHovertextEditor from './TaglineHovertextEditor';
 import GuestsTable from './GuestsTable';
 import InviteesTable from './InviteesTable';
 import MenuOptionsTable from './MenuOptionsTable';
+import SeatingChart, { SeatingCount } from './SeatingChart';
 
 const adminFont = Inter({
   subsets: ['latin'],
@@ -92,6 +93,12 @@ export default async function AdminPage() {
                 label: 'Awaiting reply',
                 count: <AwaitingReplyCount />,
                 panel: <AwaitingReplyTable baseUrl={baseUrl} hasNudgeEmail={!!emails.nudge.bodyHtml} />,
+              },
+              {
+                id: 'seating',
+                label: 'Seating',
+                count: <SeatingCount />,
+                panel: <SeatingChart />,
               },
               {
                 id: 'menu',
