@@ -3,6 +3,7 @@ import type { Guest } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getViewerInviteeId, isAdmin } from '@/lib/auth';
 import { notifyHostsOfNewGuestRegistration } from '@/lib/notifyHostsOfNewGuestRegistration';
+import { refuseIfRsvpsClosed } from '@/lib/rsvpsClosed';
 import { parsePartyRegistrationBody } from './parsePartyRegistrationBody';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const viewerInviteeId = await getViewerInviteeId();
   if (!viewerInviteeId && !(await isAdmin())) return notAuthorized();
+  const rsvpsClosedResponse = await refuseIfRsvpsClosed();
+  if (rsvpsClosedResponse) return rsvpsClosedResponse;
   const payload = parsePartyRegistrationBody(await request.json());
   if (!payload) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });

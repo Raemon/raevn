@@ -3,6 +3,7 @@ import type { Diet } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { MAX_FAMILY_MEMBERS, MAX_GUEST_NAME_LENGTH } from '@/app/handfasting-simple/guest-constellation/partyLimits';
 import { notifyHostsOfFamilyMemberAdded } from '@/lib/notifyHostsOfGuestRegistrationUpdate';
+import { refuseIfRsvpsClosed } from '@/lib/rsvpsClosed';
 import { mayEditGuestRow, notAuthorized } from '../../guestRowOwnership';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,8 @@ const DIET_ALLOWLIST = new Set<string>(['omnivore', 'vegetarian', 'vegan', 'none
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!(await mayEditGuestRow(id))) return notAuthorized();
+  const rsvpsClosedResponse = await refuseIfRsvpsClosed();
+  if (rsvpsClosedResponse) return rsvpsClosedResponse;
   const primary = await prisma.guest.findUnique({ where: { id } });
   if (!primary) return NextResponse.json({ error: 'No such registration' }, { status: 404 });
   const body = (await request.json()) as {

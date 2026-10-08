@@ -25,10 +25,13 @@ const Handfasting2 = ({
   personalization,
   tapestrySection,
   taglineHovertext,
+  rsvpsClosed,
 }: {
   personalization?: PersonalizedInvitation;
   // The hosts' note behind the dashed phrase in the subtitle, from /admin.
   taglineHovertext?: string | null;
+  // Set from the toggle on /admin; swaps the RSVP panel for a closing notice.
+  rsvpsClosed?: boolean;
   // /preview renders this very page and swaps in its own tapestry — the one
   // that plays the invite list arriving — so the surface around it stays the
   // real thing rather than a lookalike that can drift.
@@ -123,13 +126,19 @@ const Handfasting2 = ({
             us looking at it without an invite link simply see the rest. */}
         {personalization && (
           <div className="mt-12 flex flex-col items-center">
-            <GuestNameEntry
-              persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
-              retireGuestFromConstellation={retireGuestFromConstellation}
-              className={`${cormorant.className}`}
-              guestName={personalization.inviteeName}
-              inviteToken={personalization.inviteToken}
-            />
+            {rsvpsClosed ? (
+              <p className={`${cormorant.className} m-0 text-[clamp(1.2rem,2vw,1.6rem)] font-light italic tracking-[0.04em] text-[#e3e6eb]`}>
+                RSVPs are closed now.
+              </p>
+            ) : (
+              <GuestNameEntry
+                persistGuestThroughConstellationCatalog={persistGuestThroughConstellationCatalog}
+                retireGuestFromConstellation={retireGuestFromConstellation}
+                className={`${cormorant.className}`}
+                guestName={personalization.inviteeName}
+                inviteToken={personalization.inviteToken}
+              />
+            )}
           </div>
         )}
           <div className="mt-[2.75rem] flex w-full flex-col items-center px-2">

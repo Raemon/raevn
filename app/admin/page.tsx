@@ -6,6 +6,7 @@ import { isAdmin } from '@/lib/auth';
 import { getDefaultInvitationHtml } from '@/lib/defaultInvitation';
 import { getInvitationEmails } from '@/lib/invitationEmail';
 import { getTaglineHovertext } from '@/lib/taglineHovertext';
+import { getRsvpsClosed } from '@/lib/rsvpsClosed';
 import { readInviteeColumnOrder } from '@/lib/inviteeColumnOrder';
 import { pocketKey } from '@/lib/pocketAccess';
 import AdminRowsProvider, { AdminRowCount } from './AdminRowsProvider';
@@ -15,6 +16,7 @@ import AwaitingReplyTable, { AwaitingReplyCount } from './AwaitingReplyTable';
 import DefaultInvitationEditor from './DefaultInvitationEditor';
 import InvitationEmailEditor from './InvitationEmailEditor';
 import TaglineHovertextEditor from './TaglineHovertextEditor';
+import RsvpsClosedToggle from './RsvpsClosedToggle';
 import GuestsTable from './GuestsTable';
 import InviteesTable from './InviteesTable';
 import MenuOptionsTable from './MenuOptionsTable';
@@ -35,12 +37,13 @@ export const metadata = {
 export default async function AdminPage() {
   if (!(await isAdmin())) redirect('/admin/login');
 
-  const [rows, defaultInvitationHtml, emails, inviteeColumnOrder, taglineHovertext] = await Promise.all([
+  const [rows, defaultInvitationHtml, emails, inviteeColumnOrder, taglineHovertext, rsvpsClosed] = await Promise.all([
     loadAdminRows(),
     getDefaultInvitationHtml(),
     getInvitationEmails(),
     readInviteeColumnOrder(),
     getTaglineHovertext(),
+    getRsvpsClosed(),
   ]);
 
   const headerList = await headers();
@@ -61,6 +64,8 @@ export default async function AdminPage() {
           <p className="text-base font-semibold uppercase tracking-[.35em] text-[#7a5a1c]">Ray &amp; Elizabeth</p>
           <h1 className="mt-2 text-5xl font-semibold">Guest Ledger</h1>
         </header>
+
+        <RsvpsClosedToggle initialClosed={rsvpsClosed} />
 
         <AdminRowsProvider
           initialInvitees={rows.invitees}

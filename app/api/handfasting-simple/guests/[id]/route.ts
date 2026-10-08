@@ -3,6 +3,7 @@ import type { Diet } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { MAX_GUEST_NAME_LENGTH, MAX_GUEST_NOTE_LENGTH } from '@/app/handfasting-simple/guest-constellation/partyLimits';
 import { notifyHostsOfGuestRowRemoval, notifyHostsOfGuestRowRevision } from '@/lib/notifyHostsOfGuestRegistrationUpdate';
+import { refuseIfRsvpsClosed } from '@/lib/rsvpsClosed';
 import { mayEditGuestRow, notAuthorized } from '../guestRowOwnership';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +44,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!(await mayEditGuestRow(id))) return notAuthorized();
+  const rsvpsClosedResponse = await refuseIfRsvpsClosed();
+  if (rsvpsClosedResponse) return rsvpsClosedResponse;
   const body = (await request.json()) as GuestRevisionBody | null;
   const revision: {
     note?: string | null;
@@ -79,6 +82,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!(await mayEditGuestRow(id))) return notAuthorized();
+  const rsvpsClosedResponse = await refuseIfRsvpsClosed();
+  if (rsvpsClosedResponse) return rsvpsClosedResponse;
   const guest = await prisma.guest.findUnique({ where: { id } });
   if (!guest) return NextResponse.json({ ok: true });
   const removedRows =
