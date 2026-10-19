@@ -4,21 +4,39 @@
     {
       "name": "raevn-dev",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
+      "port": 3100,
+      "autoPort": true
+    },
+    {
+      "name": "raevn-dev-npm",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "--port",
+        "3100"
+      ],
       "port": 3100,
       "autoPort": true
     },
     {
       "name": "raevn-dev-isolated",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev:preview"],
+      "runtimeArgs": [
+        "dev:preview"
+      ],
       "port": 3140,
       "autoPort": true
     },
     {
       "name": "raevn-tree4",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev:tree4"],
+      "runtimeArgs": [
+        "dev:tree4"
+      ],
       "port": 3175,
       "autoPort": true
     },

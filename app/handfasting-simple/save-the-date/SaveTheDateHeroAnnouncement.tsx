@@ -1,5 +1,6 @@
 import CalendarShortcutRibbon from './CalendarShortcutRibbon';
 import { cinzel, cormorant, playfair } from './handfastingInvitationTypography';
+import { HANDFASTING_EVENT_LOCATION } from './handfastingSaveTheDateBrief';
 
 // Stacks the lyrical beats loved ones skim before reacting or RSVPing softly.
 
@@ -20,7 +21,20 @@ const SaveTheDateHeroAnnouncement = () => (
     <p
       className={`${cormorant.className} mt-6 m-0 text-[clamp(0.95rem,1.45vw,1.2rem)] font-light italic tracking-[0.32em] text-[#c2c6cd]`}
     >
-      4:00 pm, Oakland, CA
+      Arrival time: 4:00&ndash;4:15 pm
+    </p>
+    {/* The street address only renders here, behind the viewer cookie — the
+        public locked shell on app/page.tsx says "Oakland, CA" and no more. */}
+    <p
+      className={`${cormorant.className} mt-2 m-0 text-[clamp(0.95rem,1.45vw,1.2rem)] font-light italic tracking-[0.12em] text-[#c2c6cd]`}
+    >
+      {HANDFASTING_EVENT_LOCATION}
+    </p>
+    <p
+      className={`${cormorant.className} mt-4 m-0 text-[clamp(0.9rem,1.35vw,1.1rem)] font-light tracking-[0.08em] text-[#c2c6cd]`}
+    >
+      <span className={`${cinzel.className} text-[0.8em] uppercase tracking-[0.3em] text-[#93979f]`}>Dress code</span>
+      <span className="ml-3 italic">Formal &mdash; suits for men, equivalent for women</span>
     </p>
     {/* The vendor row belongs to the time-and-place line, not floating between
         sections — it is the thing you reach for right after reading the when. */}
