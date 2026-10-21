@@ -28,9 +28,12 @@ export const INVITATION_EMAIL_SUBJECT_KEY = 'invitationEmailSubject';
 export const INVITATION_EMAIL_BODY_KEY = 'invitationEmailBodyHtml';
 export const NUDGE_EMAIL_SUBJECT_KEY = 'nudgeEmailSubject';
 export const NUDGE_EMAIL_BODY_KEY = 'nudgeEmailBodyHtml';
+export const GUESTS_EMAIL_SUBJECT_KEY = 'guestsEmailSubject';
+export const GUESTS_EMAIL_BODY_KEY = 'guestsEmailBodyHtml';
 
 export const DEFAULT_INVITATION_EMAIL_SUBJECT = 'An invitation from Ray & Elizabeth';
 export const DEFAULT_NUDGE_EMAIL_SUBJECT = 'Still hoping to hear from you — October 24th';
+export const DEFAULT_GUESTS_EMAIL_SUBJECT = 'A note from Ray & Elizabeth';
 
 // A starting draft for the nudge, offered in the editor rather than saved: it
 // is prose about your wedding written by someone who isn't you, so it wants a
@@ -46,10 +49,11 @@ export const NUDGE_EMAIL_STARTER_DRAFT_HTML = [
   '<p>With love,<br>Ray &amp; Elizabeth</p>',
 ].join('');
 
-export type InvitationEmailKind = 'invitation' | 'nudge';
+// 'guests' is the free-form email the Emails tab sends to everyone registered.
+export type InvitationEmailKind = 'invitation' | 'nudge' | 'guests';
 
 export const isInvitationEmailKind = (value: unknown): value is InvitationEmailKind =>
-  value === 'invitation' || value === 'nudge';
+  value === 'invitation' || value === 'nudge' || value === 'guests';
 
 // Which setting keys and fallback subject each kind reads and writes.
 export const EMAIL_KIND_KEYS: Record<
@@ -66,6 +70,11 @@ export const EMAIL_KIND_KEYS: Record<
     bodyKey: NUDGE_EMAIL_BODY_KEY,
     defaultSubject: DEFAULT_NUDGE_EMAIL_SUBJECT,
   },
+  guests: {
+    subjectKey: GUESTS_EMAIL_SUBJECT_KEY,
+    bodyKey: GUESTS_EMAIL_BODY_KEY,
+    defaultSubject: DEFAULT_GUESTS_EMAIL_SUBJECT,
+  },
 };
 
 export type InvitationEmail = { subject: string; bodyHtml: string | null };
@@ -81,7 +90,11 @@ export async function getInvitationEmails(): Promise<Record<InvitationEmailKind,
     subject: valueOf(EMAIL_KIND_KEYS[kind].subjectKey) ?? EMAIL_KIND_KEYS[kind].defaultSubject,
     bodyHtml: valueOf(EMAIL_KIND_KEYS[kind].bodyKey),
   });
-  return { invitation: emailFor('invitation'), nudge: emailFor('nudge') };
+  return {
+    invitation: emailFor('invitation'),
+    nudge: emailFor('nudge'),
+    guests: emailFor('guests'),
+  };
 }
 
 export type InvitationEmailFields = { name: string; inviteUrl: string };

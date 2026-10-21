@@ -15,6 +15,7 @@ import AdminTabs from './AdminTabs';
 import AwaitingReplyTable, { AwaitingReplyCount } from './AwaitingReplyTable';
 import DefaultInvitationEditor from './DefaultInvitationEditor';
 import InvitationEmailEditor from './InvitationEmailEditor';
+import GuestEmailPanel from './GuestEmailPanel';
 import TaglineHovertextEditor from './TaglineHovertextEditor';
 import RsvpsClosedToggle from './RsvpsClosedToggle';
 import GuestsTable from './GuestsTable';
@@ -110,6 +111,11 @@ export default async function AdminPage() {
                 label: 'Menu',
                 count: <AdminRowCount of="menuOptions" />,
                 panel: <MenuOptionsTable />,
+              },
+              {
+                id: 'emails',
+                label: 'Emails',
+                panel: <GuestEmailPanel initialEmail={emails.guests} />,
               },
               {
                 id: 'invitation-text',
